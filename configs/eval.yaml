@@ -1,0 +1,15 @@
+outputs:
+  checkpoint_subdir: checkpoints
+  figure_subdir: figures
+  log_subdir: logs
+  prediction_subdir: predictions
+
+evaluation:
+  mc_samples: 8
+  num_visualizations: 2
+  frames_to_plot: 3
+  figure_dpi: 160
+  save_prediction_arrays: true
+  tikhonov_lambda: 0.02
+  tikhonov_iterations: 12
+  tikhonov_step_size: 0.8

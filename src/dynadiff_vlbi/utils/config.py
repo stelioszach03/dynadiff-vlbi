@@ -1,0 +1,167 @@
+"""Configuration loading and typed access."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+@dataclass
+class ProjectConfig:
+    name: str
+    seed: int
+
+
+@dataclass
+class PathsConfig:
+    data_root: str
+    output_root: str
+
+
+@dataclass
+class OutputConfig:
+    checkpoint_subdir: str
+    figure_subdir: str
+    log_subdir: str
+    prediction_subdir: str
+
+
+@dataclass
+class SyntheticSequenceConfig:
+    train_size: int
+    val_size: int
+    test_size: int
+    image_size: int
+    sequence_length: int
+    ring_radius: float
+    ring_width: float
+    asymmetry_strength: float
+    hotspot_intensity: float
+    hotspot_width: float
+    hotspot_speed: float
+    hotspot_radius: float
+    second_hotspot_probability: float
+    jet_intensity: float
+    temporal_variability: float
+    background_level: float
+
+
+@dataclass
+class SamplingConfig:
+    coverage: float
+    radial_exponent: float
+    missing_fraction: float
+    hermitian_symmetric: bool
+    include_dc: bool
+
+
+@dataclass
+class NoiseConfig:
+    noise_std: float
+
+
+@dataclass
+class ModelConfig:
+    in_channels: int
+    out_channels: int
+    base_channels: int
+    dropout: float
+
+
+@dataclass
+class TrainingConfig:
+    batch_size: int
+    num_workers: int
+    epochs: int
+    learning_rate: float
+    weight_decay: float
+    temporal_loss_weight: float
+    grad_clip_norm: float
+
+
+@dataclass
+class EvalConfig:
+    mc_samples: int
+    num_visualizations: int
+    frames_to_plot: int
+    figure_dpi: int
+    save_prediction_arrays: bool
+    tikhonov_lambda: float
+    tikhonov_iterations: int
+    tikhonov_step_size: float
+
+
+@dataclass
+class ExperimentConfig:
+    project: ProjectConfig
+    paths: PathsConfig
+    outputs: OutputConfig
+    dataset: SyntheticSequenceConfig
+    sampling: SamplingConfig
+    noise: NoiseConfig
+    model: ModelConfig
+    training: TrainingConfig
+    evaluation: EvalConfig
+    preset_name: str
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the full configuration to a dictionary."""
+
+        return asdict(self)
+
+
+def load_yaml(path: str | Path) -> dict[str, Any]:
+    """Load a YAML file into a dictionary."""
+
+    with Path(path).open("r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge nested dictionaries."""
+
+    merged = dict(base)
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = deep_update(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _build_config(payload: dict[str, Any], preset_name: str) -> ExperimentConfig:
+    return ExperimentConfig(
+        project=ProjectConfig(**payload["project"]),
+        paths=PathsConfig(**payload["paths"]),
+        outputs=OutputConfig(**payload["outputs"]),
+        dataset=SyntheticSequenceConfig(**payload["dataset"]),
+        sampling=SamplingConfig(**payload["sampling"]),
+        noise=NoiseConfig(**payload["noise"]),
+        model=ModelConfig(**payload["model"]),
+        training=TrainingConfig(**payload["training"]),
+        evaluation=EvalConfig(**payload["evaluation"]),
+        preset_name=preset_name,
+    )
+
+
+def load_experiment_config(
+    base_path: str | Path,
+    train_path: str | Path,
+    eval_path: str | Path,
+    preset: str,
+) -> ExperimentConfig:
+    """Load and merge the base, train preset, and evaluation configuration files."""
+
+    base_cfg = load_yaml(base_path)
+    train_cfg = load_yaml(train_path)
+    eval_cfg = load_yaml(eval_path)
+    presets = train_cfg.get("presets", {})
+    if preset not in presets:
+        available = ", ".join(sorted(presets))
+        raise KeyError(f"Unknown preset '{preset}'. Available presets: {available}")
+    merged = deep_update(base_cfg, eval_cfg)
+    merged = deep_update(merged, presets[preset])
+    return _build_config(merged, preset_name=preset)
