@@ -9,6 +9,9 @@ from typing import Any
 import yaml
 
 
+DEFAULT_BASE_CONFIG_PATH = Path("configs/base.yaml")
+
+
 @dataclass
 class ProjectConfig:
     name: str
@@ -151,17 +154,21 @@ def load_experiment_config(
     base_path: str | Path,
     train_path: str | Path,
     eval_path: str | Path,
-    preset: str,
+    preset: str | None = None,
+    default_base_path: str | Path | None = None,
 ) -> ExperimentConfig:
-    """Load and merge the base, train preset, and evaluation configuration files."""
+    """Load and merge the default base, evaluation, optional preset, and custom config files."""
 
+    default_base_cfg = load_yaml(default_base_path or base_path)
     base_cfg = load_yaml(base_path)
-    train_cfg = load_yaml(train_path)
     eval_cfg = load_yaml(eval_path)
-    presets = train_cfg.get("presets", {})
-    if preset not in presets:
-        available = ", ".join(sorted(presets))
-        raise KeyError(f"Unknown preset '{preset}'. Available presets: {available}")
-    merged = deep_update(base_cfg, eval_cfg)
-    merged = deep_update(merged, presets[preset])
-    return _build_config(merged, preset_name=preset)
+    merged = deep_update(default_base_cfg, eval_cfg)
+    if preset is not None:
+        train_cfg = load_yaml(train_path)
+        presets = train_cfg.get("presets", {})
+        if preset not in presets:
+            available = ", ".join(sorted(presets))
+            raise KeyError(f"Unknown preset '{preset}'. Available presets: {available}")
+        merged = deep_update(merged, presets[preset])
+    merged = deep_update(merged, base_cfg)
+    return _build_config(merged, preset_name=preset or "custom")
