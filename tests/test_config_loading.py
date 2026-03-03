@@ -39,3 +39,16 @@ def test_custom_config_overrides_preset_for_noise_and_sampling_values() -> None:
     assert noise_config.noise.noise_std == 0.06
     assert sparse_config.sampling.coverage == 0.06
     assert sparse_config.sampling.missing_fraction == 0.20
+
+
+def test_default_base_with_smoke_preset_keeps_smoke_sizes() -> None:
+    config = load_experiment_config(
+        base_path=ROOT / "configs/base.yaml",
+        train_path=ROOT / "configs/train.yaml",
+        eval_path=ROOT / "configs/eval.yaml",
+        preset="smoke",
+        default_base_path=ROOT / "configs/base.yaml",
+    )
+    assert config.dataset.train_size == 16
+    assert config.dataset.val_size == 4
+    assert config.dataset.test_size == 4

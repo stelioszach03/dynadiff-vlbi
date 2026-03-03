@@ -72,6 +72,12 @@ class ModelConfig:
     out_channels: int
     base_channels: int
     dropout: float
+    model_type: str = "baseline"
+    include_dirty_input: bool = False
+    visibility_representation: str = "real_imag"
+    include_uv_coords: bool = False
+    include_mask_channel: bool = True
+    uncertainty_head: bool = False
 
 
 @dataclass
@@ -83,6 +89,7 @@ class TrainingConfig:
     weight_decay: float
     temporal_loss_weight: float
     grad_clip_norm: float
+    heteroscedastic_loss_weight: float = 0.0
 
 
 @dataclass
@@ -95,6 +102,9 @@ class EvalConfig:
     tikhonov_lambda: float
     tikhonov_iterations: int
     tikhonov_step_size: float
+    compare_reference_baseline: bool = False
+    reference_baseline_run_name: str | None = None
+    save_comparison_csv: bool = True
 
 
 @dataclass
@@ -159,8 +169,10 @@ def load_experiment_config(
 ) -> ExperimentConfig:
     """Load and merge the default base, evaluation, optional preset, and custom config files."""
 
-    default_base_cfg = load_yaml(default_base_path or base_path)
-    base_cfg = load_yaml(base_path)
+    default_base_resolved = Path(default_base_path or base_path).resolve()
+    base_path_resolved = Path(base_path).resolve()
+    default_base_cfg = load_yaml(default_base_resolved)
+    base_cfg = load_yaml(base_path_resolved)
     eval_cfg = load_yaml(eval_path)
     merged = deep_update(default_base_cfg, eval_cfg)
     if preset is not None:
@@ -170,5 +182,6 @@ def load_experiment_config(
             available = ", ".join(sorted(presets))
             raise KeyError(f"Unknown preset '{preset}'. Available presets: {available}")
         merged = deep_update(merged, presets[preset])
-    merged = deep_update(merged, base_cfg)
+    if base_path_resolved != default_base_resolved:
+        merged = deep_update(merged, base_cfg)
     return _build_config(merged, preset_name=preset or "custom")

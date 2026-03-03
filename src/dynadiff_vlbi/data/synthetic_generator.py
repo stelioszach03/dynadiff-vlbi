@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
+from dynadiff_vlbi.data.feature_formatting import build_temporal_uv_grid
 from dynadiff_vlbi.data.io import save_npz
 from dynadiff_vlbi.physics.fourier_operator import FourierMeasurementOperator
 from dynadiff_vlbi.physics.sampling import generate_temporal_uv_mask
@@ -131,6 +132,10 @@ def generate_split_dataset(
 
     rng = np.random.default_rng(seed)
     operator = FourierMeasurementOperator(noise_std=noise_config.noise_std, seed=seed + 137)
+    uv_coords = build_temporal_uv_grid(
+        image_size=dataset_config.image_size,
+        sequence_length=dataset_config.sequence_length,
+    )
 
     ground_truth = []
     dirty = []
@@ -165,6 +170,7 @@ def generate_split_dataset(
         "mask": np.stack(masks).astype(np.float32),
         "ring_radius_px": np.asarray(ring_radii, dtype=np.float32),
         "hotspot_coords_px": np.stack(hotspot_coords).astype(np.float32),
+        "uv_coords": uv_coords.astype(np.float32),
     }
 
 
