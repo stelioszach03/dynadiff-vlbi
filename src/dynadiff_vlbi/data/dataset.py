@@ -22,6 +22,7 @@ class DynamicVLBIDataset(Dataset):
         self.mask = data["mask"].astype("float32")
         self.ring_radius_px = data["ring_radius_px"].astype("float32")
         self.hotspot_coords_px = data["hotspot_coords_px"].astype("float32")
+        self.uv_coords = data["uv_coords"].astype("float32") if "uv_coords" in data else None
 
     def __len__(self) -> int:
         return int(self.ground_truth.shape[0])

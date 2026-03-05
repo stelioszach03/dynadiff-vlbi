@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the compact temporal U-Net baseline."""
+"""Train the baseline or phase 2 reconstruction model."""
 
 from __future__ import annotations
 
@@ -14,7 +14,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from dynadiff_vlbi.data.dataset import build_dataloaders
-from dynadiff_vlbi.models.temporal_unet import TemporalUNet3D
+from dynadiff_vlbi.data.visibility_dataset import build_visibility_dataloaders
+from dynadiff_vlbi.models.factory import build_model
+from dynadiff_vlbi.training.phase2_trainer import Phase2Trainer
 from dynadiff_vlbi.training.trainer import Trainer
 from dynadiff_vlbi.utils.config import DEFAULT_BASE_CONFIG_PATH, load_experiment_config
 from dynadiff_vlbi.utils.device import get_device
@@ -50,6 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-config", default="configs/train.yaml")
     parser.add_argument("--eval-config", default="configs/eval.yaml")
     parser.add_argument("--preset", default=None, choices=["smoke", "default32", "exp64"])
+    parser.add_argument("--model-type", default=None, choices=["baseline", "visibility_conditioned"])
     parser.add_argument("--data-dir", default=None)
     parser.add_argument("--output-root", default=None)
     parser.add_argument("--run-name", default=None)
@@ -69,6 +72,8 @@ def main() -> None:
         preset=preset,
         default_base_path=ROOT / DEFAULT_BASE_CONFIG_PATH,
     )
+    if args.model_type is not None:
+        config.model.model_type = args.model_type
     if args.epochs is not None:
         config.training.epochs = int(args.epochs)
     set_seed(config.project.seed)
@@ -83,14 +88,26 @@ def main() -> None:
     output_root = Path(args.output_root) if args.output_root else ROOT / config.paths.output_root
     run_name = args.run_name or f"train_{experiment_label}"
     output_dirs = prepare_output_dirs(str(output_root), run_name=run_name, config=config)
-    train_loader, val_loader, _ = build_dataloaders(
-        data_dir=data_dir,
-        batch_size=config.training.batch_size,
-        num_workers=config.training.num_workers,
-    )
+    if config.model.model_type == "baseline":
+        train_loader, val_loader, _ = build_dataloaders(
+            data_dir=data_dir,
+            batch_size=config.training.batch_size,
+            num_workers=config.training.num_workers,
+        )
+        trainer_cls = Trainer
+    elif config.model.model_type == "visibility_conditioned":
+        train_loader, val_loader, _ = build_visibility_dataloaders(
+            data_dir=data_dir,
+            batch_size=config.training.batch_size,
+            num_workers=config.training.num_workers,
+            model_config=config.model,
+        )
+        trainer_cls = Phase2Trainer
+    else:
+        raise ValueError(f"Unsupported model_type '{config.model.model_type}'.")
 
-    model = TemporalUNet3D(config.model)
-    trainer = Trainer(model=model, config=config, device=get_device(), output_dirs=output_dirs)
+    model = build_model(config.model)
+    trainer = trainer_cls(model=model, config=config, device=get_device(), output_dirs=output_dirs)
     summary = trainer.fit(train_loader=train_loader, val_loader=val_loader)
     print(f"Training complete. Best checkpoint: {summary['best_checkpoint']}")
     print(f"Best validation loss: {summary['best_val_total']:.6f}")
