@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", default="paper/manuscript.md")
     parser.add_argument("--bibliography", default="paper/references.bib")
-    parser.add_argument("--output", default="paper/manuscript.pdf")
+    parser.add_argument("--output", default="paper/manuscript_mnras.pdf")
     return parser.parse_args()
 
 

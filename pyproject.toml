@@ -32,7 +32,7 @@ where = ["src"]
 
 [project.urls]
 Repository = "https://github.com/stelioszach03/dynadiff-vlbi"
-Manuscript = "paper/manuscript_v7.md"
+Manuscript = "paper/manuscript.md"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
