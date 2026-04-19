@@ -1,0 +1,2 @@
+team_or_method,holdout_family,support_fraction,heldout_visibility_rmse,heldout_closure_phase_mae,mse,ssim,temporal_consistency,config_manifest,split_manifest,notes
+Your method,baseline_track_blocks,0.8,,,,,,,,

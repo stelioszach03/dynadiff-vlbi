@@ -1,0 +1,46 @@
+{
+  "rows": [
+    {
+      "cohort": "Synthetic benchmark breadth",
+      "comparison": "EMC vs CCRR",
+      "metric": "heldout_visibility_rmse",
+      "n_pairs": 768,
+      "candidate_mean": 0.07140285387868062,
+      "reference_mean": 0.0980436013439127,
+      "mean_delta": 0.026640747465232078,
+      "ci_low": 0.02484046178700131,
+      "ci_high": 0.028423166320862947,
+      "win_rate": 0.8567708333333334,
+      "tie_rate": 0.0,
+      "p_value": 0.0
+    },
+    {
+      "cohort": "Synthetic benchmark breadth",
+      "comparison": "EMC vs Residual Refinement",
+      "metric": "heldout_visibility_rmse",
+      "n_pairs": 768,
+      "candidate_mean": 0.07140285387868062,
+      "reference_mean": 0.09537248790729791,
+      "mean_delta": 0.023969634028617293,
+      "ci_low": 0.02221852849397692,
+      "ci_high": 0.025705489190295337,
+      "win_rate": 0.82421875,
+      "tie_rate": 0.0,
+      "p_value": 0.0
+    },
+    {
+      "cohort": "Synthetic benchmark breadth",
+      "comparison": "EMC vs Baseline 3D U-Net",
+      "metric": "heldout_visibility_rmse",
+      "n_pairs": 768,
+      "candidate_mean": 0.07140285387868062,
+      "reference_mean": 0.0994471479158771,
+      "mean_delta": 0.028044294037196476,
+      "ci_low": 0.026181827639932938,
+      "ci_high": 0.02991192496616956,
+      "win_rate": 0.8736979166666666,
+      "tie_rate": 0.0,
+      "p_value": 0.0
+    }
+  ]
+}

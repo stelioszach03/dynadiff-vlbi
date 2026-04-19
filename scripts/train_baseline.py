@@ -7,6 +7,8 @@ import argparse
 import sys
 from pathlib import Path
 
+import torch
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 DEFAULT_BASE_CONFIG = "configs/base.yaml"
@@ -46,16 +48,47 @@ def _experiment_label(base_config_path: Path, preset: str | None) -> str:
     return base_name
 
 
+def _resolve_optional_path(path_str: str | None) -> Path | None:
+    if path_str is None:
+        return None
+    path = Path(path_str)
+    if path.is_absolute():
+        return path
+    return ROOT / path
+
+
+def _initialize_backbone_from_checkpoint(
+    model: torch.nn.Module,
+    checkpoint_path: Path,
+) -> None:
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint_config = checkpoint.get("config", {}).get("model", {})
+    if checkpoint_config.get("model_type") != "baseline":
+        raise ValueError(
+            "This model expects a baseline 3D U-Net checkpoint for backbone initialization."
+        )
+    if not hasattr(model, "backbone"):
+        raise ValueError("The selected model does not expose a backbone for initialization.")
+    model.backbone.load_state_dict(checkpoint["model_state_dict"])
+    if getattr(model, "freeze_backbone", False):
+        model.backbone.eval()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-config", default=DEFAULT_BASE_CONFIG)
     parser.add_argument("--train-config", default="configs/train.yaml")
     parser.add_argument("--eval-config", default="configs/eval.yaml")
-    parser.add_argument("--preset", default=None, choices=["smoke", "default32", "exp64"])
-    parser.add_argument("--model-type", default=None, choices=["baseline", "visibility_conditioned"])
+    parser.add_argument("--preset", default=None, choices=["smoke", "default32", "default64", "exp64"])
+    parser.add_argument(
+        "--model-type",
+        default=None,
+        choices=["baseline", "visibility_conditioned", "residual_visibility_refinement", "ccrr", "emc_ccrr"],
+    )
     parser.add_argument("--data-dir", default=None)
     parser.add_argument("--output-root", default=None)
     parser.add_argument("--run-name", default=None)
+    parser.add_argument("--backbone-checkpoint", default=None)
     parser.add_argument("--epochs", type=int, default=None, help="Optional epoch override for quick experiments.")
     return parser.parse_args()
 
@@ -76,6 +109,9 @@ def main() -> None:
         config.model.model_type = args.model_type
     if args.epochs is not None:
         config.training.epochs = int(args.epochs)
+    backbone_checkpoint = _resolve_optional_path(args.backbone_checkpoint or config.training.backbone_checkpoint)
+    if backbone_checkpoint is not None:
+        config.training.backbone_checkpoint = str(backbone_checkpoint)
     set_seed(config.project.seed)
 
     experiment_label = _experiment_label(base_config_path=base_config_path, preset=preset)
@@ -95,7 +131,7 @@ def main() -> None:
             num_workers=config.training.num_workers,
         )
         trainer_cls = Trainer
-    elif config.model.model_type == "visibility_conditioned":
+    elif config.model.model_type in {"visibility_conditioned", "residual_visibility_refinement", "ccrr", "emc_ccrr"}:
         train_loader, val_loader, _ = build_visibility_dataloaders(
             data_dir=data_dir,
             batch_size=config.training.batch_size,
@@ -107,6 +143,14 @@ def main() -> None:
         raise ValueError(f"Unsupported model_type '{config.model.model_type}'.")
 
     model = build_model(config.model)
+    if config.model.model_type in {"residual_visibility_refinement", "ccrr", "emc_ccrr"}:
+        if backbone_checkpoint is None:
+            raise FileNotFoundError(
+                "This model requires --backbone-checkpoint or training.backbone_checkpoint."
+            )
+        if not backbone_checkpoint.exists():
+            raise FileNotFoundError(f"Backbone checkpoint not found: {backbone_checkpoint}")
+        _initialize_backbone_from_checkpoint(model=model, checkpoint_path=backbone_checkpoint)
     trainer = trainer_cls(model=model, config=config, device=get_device(), output_dirs=output_dirs)
     summary = trainer.fit(train_loader=train_loader, val_loader=val_loader)
     print(f"Training complete. Best checkpoint: {summary['best_checkpoint']}")

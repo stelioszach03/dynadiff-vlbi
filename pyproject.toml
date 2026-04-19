@@ -5,11 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dynadiff-vlbi"
 version = "0.1.0"
-description = "Colab-first synthetic dynamic VLBI reconstruction baseline with uncertainty estimates."
+description = "Benchmark-first dynamic VLBI evaluation framework for earned versus enforced measurement consistency with public EHT validation."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "OpenAI Codex" }]
+authors = [
+  { name = "Stylianos Georgios Zacharioudakis", email = "sdi2200243@di.uoa.gr" },
+]
 dependencies = [
   "matplotlib>=3.8",
   "numpy>=1.24",
@@ -21,6 +23,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+
+[project.urls]
+Repository = "https://github.com/stelioszach03/dynadiff-vlbi"
+Manuscript = "paper/manuscript.pdf"
+BenchmarkDocs = "benchmark/README.md"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

@@ -28,6 +28,8 @@ def visibility_input_channels(config: ModelConfig) -> int:
         channels += 1
     if config.include_uv_coords:
         channels += 2
+    if config.include_observation_metadata:
+        channels += 4
     return channels
 
 
@@ -67,6 +69,10 @@ class VisibilityConditionedReconstructor(BaseReconstructionModel):
         self,
         visibility_input: torch.Tensor,
         dirty_input: torch.Tensor | None = None,
+        measurements: torch.Tensor | None = None,
+        mask: torch.Tensor | None = None,
+        baseline_pairs: torch.Tensor | None = None,
+        frame_uv_indices: torch.Tensor | None = None,
     ) -> VisibilityConditionedOutput:
         visibility_features = self.visibility_stem(visibility_input)
         if self.include_dirty_input:

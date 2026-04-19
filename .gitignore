@@ -1,10 +1,33 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+build/
+dist/
+
+# Testing / linting caches
 .pytest_cache/
+.hypothesis/
+.ruff_cache/
 .coverage
-.DS_Store
-.ipynb_checkpoints/
+
+# Environments
 .venv/
-data/generated/
+venv/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+
+# Tooling
+.claude/
+
+# Generated artifacts (not tracked — reproduce locally)
 outputs/
+data/generated/
+data/external/
+data/real/
+tmp/
+temp/

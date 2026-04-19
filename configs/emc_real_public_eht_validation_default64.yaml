@@ -1,0 +1,36 @@
+project:
+  name: dynadiff-vlbi-emc-real-public-eht-default64
+
+model:
+  model_type: emc_ccrr
+  base_channels: 24
+  refinement_channels: 16
+  dropout: 0.15
+  include_dirty_input: true
+  visibility_representation: real_imag
+  include_uv_coords: true
+  include_mask_channel: true
+  include_observation_metadata: true
+  uncertainty_head: true
+  residual_scale: 0.18
+  freeze_backbone: true
+  dc_enabled: true
+  dc_weight: 1.0
+  dc_learnable: false
+
+holdout:
+  enabled: true
+  strategy: baseline_track_blocks
+  support_fraction: 0.6
+  train_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2
+  eval_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2
+  max_triangles: 24
+  min_eval_closure_triangles: 12

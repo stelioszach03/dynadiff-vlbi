@@ -1,0 +1,51 @@
+{
+  "paper_active_figures": {
+    "fig01_emc_schematic": {
+      "source": "scripts/generate_emc_artifacts.py"
+    },
+    "fig02_emc_benchmark_support_curve": {
+      "sources": [
+        "outputs/emc_benchmark_baseline_tracks_protocol/logs/emc_protocol_summary.json",
+        "outputs/emc_benchmark_scan_segments_protocol/logs/emc_protocol_summary.json",
+        "outputs/emc_benchmark_station_dropout_protocol/logs/emc_protocol_summary.json"
+      ]
+    },
+    "fig03_emc_challenge_inspired_realism": {
+      "source": "outputs/emc_benchmark_challenge_inspired_realism_protocol/logs/emc_protocol_summary.json"
+    },
+    "fig06_emc_public_eht_suite": {
+      "sources": [
+        "outputs/public_eht_suite/baseline_track_blocks/m87_2017_2019-d01-01/logs/real_data_protocol_summary.json",
+        "outputs/public_eht_suite/baseline_track_blocks/m87_2018_2024-d01-01/logs/real_data_protocol_summary.json",
+        "outputs/public_eht_suite/baseline_track_blocks/3c279_2017_2020-d01-01/logs/real_data_protocol_summary.json",
+        "outputs/public_eht_suite/baseline_track_blocks/cena_2017_2021-d03-01/logs/real_data_protocol_summary.json"
+      ]
+    },
+    "fig07_emc_public_transfer_gap": {
+      "synthetic_source": "outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.csv",
+      "public_source": "outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_gaps.csv"
+    },
+    "fig06_consistency_bound": {
+      "sources": [
+        "theory/consistency_bound.py",
+        "theory/consistency_bound_results.json",
+        "theory/PROOF_SKETCH.md"
+      ]
+    },
+    "fig08_emc_synthetic_qualitative": {
+      "sample_index": 32,
+      "frame_index": 5,
+      "support_fraction_tag": "40",
+      "prediction_path": "outputs/emc_benchmark_baseline_tracks_protocol/predictions/support_40.npz",
+      "per_sample_csv": "outputs/emc_benchmark_baseline_tracks_protocol/logs/per_sample_support_40.csv"
+    },
+    "fig09_public_eht_qualitative": {
+      "track_label": "M87 2017 (2019-D01-01)",
+      "sample_index": 0,
+      "frame_index": 6,
+      "support_fraction_tag": "60",
+      "prediction_path": "outputs/public_eht_suite/baseline_track_blocks/m87_2017_2019-d01-01/predictions/support_60.npz",
+      "per_sample_csv": "outputs/public_eht_suite/baseline_track_blocks/m87_2017_2019-d01-01/logs/per_sample_support_60.csv"
+    }
+  }
+}

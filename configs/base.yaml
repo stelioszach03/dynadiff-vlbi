@@ -16,7 +16,7 @@ dataset:
   train_size: 256
   val_size: 64
   test_size: 64
-  image_size: 32
+  image_size: 64
   sequence_length: 8
   ring_radius: 0.42
   ring_width: 0.08
@@ -36,15 +36,37 @@ sampling:
   missing_fraction: 0.10
   hermitian_symmetric: true
   include_dc: true
+  mode: random_radial
+  station_count: 0
+  earth_rotation_degrees: 0.0
+  station_jitter: 0.0
+  scan_gap_probability: 0.0
+  scan_gap_length: 0
 
 noise:
   noise_std: 0.03
+  baseline_noise_jitter: 0.0
+  gain_amplitude_std: 0.0
+  gain_phase_std: 0.0
 
 model:
   in_channels: 1
   out_channels: 1
   base_channels: 16
   dropout: 0.15
+  model_type: baseline
+  include_dirty_input: false
+  visibility_representation: real_imag
+  include_uv_coords: false
+  include_mask_channel: true
+  include_observation_metadata: false
+  uncertainty_head: false
+  refinement_channels: 8
+  residual_scale: 0.25
+  freeze_backbone: false
+  dc_enabled: false
+  dc_weight: 1.0
+  dc_learnable: false
 
 training:
   batch_size: 8
@@ -54,6 +76,14 @@ training:
   weight_decay: 0.00001
   temporal_loss_weight: 0.20
   grad_clip_norm: 1.0
+  heteroscedastic_loss_weight: 0.0
+  reconstruction_warmup_epochs: 0
+  backbone_checkpoint: null
+  visibility_loss_weight: 0.0
+  closure_loss_weight: 0.0
+  closure_max_triangles: 24
+  target_visibility_loss_weight: 0.0
+  target_closure_loss_weight: 0.0
 
 evaluation:
   mc_samples: 8
@@ -64,3 +94,20 @@ evaluation:
   tikhonov_lambda: 0.02
   tikhonov_iterations: 12
   tikhonov_step_size: 0.8
+  compare_reference_baseline: false
+  reference_baseline_run_name: null
+  reference_visibility_run_name: null
+  reference_residual_run_name: null
+  reference_ccrr_run_name: null
+  save_comparison_csv: true
+
+holdout:
+  enabled: false
+  strategy: none
+  support_fraction: 1.0
+  train_support_fractions:
+    - 1.0
+  eval_support_fractions:
+    - 1.0
+  max_triangles: 24
+  min_eval_closure_triangles: 24

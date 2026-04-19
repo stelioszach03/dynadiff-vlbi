@@ -1,0 +1,28 @@
+project:
+  name: dynadiff-vlbi-ccrr-ablation
+
+sampling:
+  mode: station_tracks
+  station_count: 12
+  earth_rotation_degrees: 110.0
+  station_jitter: 0.04
+  coverage: 0.08
+  missing_fraction: 0.08
+  hermitian_symmetric: true
+  include_dc: true
+
+model:
+  model_type: ccrr
+  include_dirty_input: true
+  include_uv_coords: true
+  include_mask_channel: true
+  include_observation_metadata: true
+  uncertainty_head: true
+  freeze_backbone: true
+  dc_enabled: true
+
+training:
+  heteroscedastic_loss_weight: 0.10
+  reconstruction_warmup_epochs: 2
+  visibility_loss_weight: 0.02
+  closure_loss_weight: 0.0

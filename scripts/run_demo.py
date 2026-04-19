@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--preset", default="smoke", choices=["smoke", "default32", "exp64"])
+    parser.add_argument("--preset", default="smoke", choices=["smoke", "default32", "default64", "exp64"])
     parser.add_argument("--run-name", default=None)
     return parser.parse_args()
 

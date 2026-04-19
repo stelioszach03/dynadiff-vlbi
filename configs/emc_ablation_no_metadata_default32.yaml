@@ -1,0 +1,42 @@
+project:
+  name: dynadiff-vlbi-emc-ablation
+
+model:
+  model_type: emc_ccrr
+  base_channels: 16
+  refinement_channels: 8
+  dropout: 0.15
+  include_dirty_input: true
+  visibility_representation: real_imag
+  include_uv_coords: true
+  include_mask_channel: true
+  include_observation_metadata: false
+  uncertainty_head: true
+  residual_scale: 0.20
+  freeze_backbone: true
+  dc_enabled: true
+  dc_weight: 1.0
+  dc_learnable: false
+
+training:
+  heteroscedastic_loss_weight: 0.10
+  reconstruction_warmup_epochs: 2
+  visibility_loss_weight: 0.02
+  closure_loss_weight: 0.0
+  target_visibility_loss_weight: 0.06
+  target_closure_loss_weight: 0.0
+
+holdout:
+  enabled: true
+  strategy: baseline_track_blocks
+  support_fraction: 0.6
+  train_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2
+  eval_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2

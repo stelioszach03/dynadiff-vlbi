@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this repository, benchmark, or manuscript artifacts, please cite the repository snapshot."
+title: "dynadiff-vlbi: earned versus enforced measurement consistency in dynamic VLBI"
+type: software
+authors:
+  - family-names: Zacharioudakis
+    given-names: Stylianos Georgios
+    affiliation: "Department of Informatics and Telecommunications, National and Kapodistrian University of Athens, Panepistimioupolis, Athens 16122, Greece"
+    email: "sdi2200243@di.uoa.gr"
+repository-code: "https://github.com/stelioszach03/dynadiff-vlbi"
+url: "https://github.com/stelioszach03/dynadiff-vlbi"
+license: MIT
+version: 0.1.0
+keywords:
+  - dynamic VLBI
+  - benchmark
+  - scientific machine learning
+  - Event Horizon Telescope
+abstract: "Benchmark-first dynamic VLBI evaluation framework for earned versus enforced measurement consistency with controlled public EHT measurement-domain validation."

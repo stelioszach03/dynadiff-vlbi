@@ -41,6 +41,8 @@ def test_generated_dataset_splits_and_loader_match_smoke_preset(tmp_path: Path) 
     )
     assert train_arrays["mask"].shape == train_arrays["ground_truth"].shape
     assert train_arrays["hotspot_coords_px"].shape == (config.dataset.train_size, config.dataset.sequence_length, 2)
+    assert train_arrays["station_positions"].shape[1] == 2
+    assert train_arrays["baseline_pairs"].shape[1] == 2
 
     dataset = DynamicVLBIDataset(data_dir / "train.npz")
     sample = dataset[0]
@@ -51,3 +53,28 @@ def test_generated_dataset_splits_and_loader_match_smoke_preset(tmp_path: Path) 
     )
     assert sample["target"].shape == sample["input"].shape
     assert sample["hotspot_coords_px"].shape == (config.dataset.sequence_length, 2)
+    assert sample["baseline_pairs"].shape[1] == 2
+
+
+def test_station_bridge_dataset_persists_observation_metadata(tmp_path: Path) -> None:
+    config = load_experiment_config(
+        base_path=ROOT / "configs/mnras_realism_bridge_default32.yaml",
+        train_path=ROOT / "configs/train.yaml",
+        eval_path=ROOT / "configs/eval.yaml",
+        preset="smoke",
+        default_base_path=ROOT / "configs/base.yaml",
+    )
+    data_dir = tmp_path / "mnras_bridge_smoke"
+    generate_dataset_splits(
+        output_dir=data_dir,
+        dataset_config=config.dataset,
+        sampling_config=config.sampling,
+        noise_config=config.noise,
+        base_seed=config.project.seed,
+    )
+
+    dataset = DynamicVLBIDataset(data_dir / "train.npz")
+    sample = dataset[0]
+    assert sample["station_positions"].shape[1] == 2
+    assert sample["baseline_pairs"].shape[1] == 2
+    assert sample["frame_uv_indices"].shape[0] == config.dataset.sequence_length

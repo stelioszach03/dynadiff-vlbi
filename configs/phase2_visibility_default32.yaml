@@ -13,6 +13,7 @@ training:
   epochs: 8
   temporal_loss_weight: 0.15
   heteroscedastic_loss_weight: 0.25
+  reconstruction_warmup_epochs: 0
 
 evaluation:
   compare_reference_baseline: true

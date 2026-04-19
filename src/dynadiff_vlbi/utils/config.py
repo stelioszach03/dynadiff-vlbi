@@ -59,11 +59,20 @@ class SamplingConfig:
     missing_fraction: float
     hermitian_symmetric: bool
     include_dc: bool
+    mode: str = "random_radial"
+    station_count: int = 0
+    earth_rotation_degrees: float = 0.0
+    station_jitter: float = 0.0
+    scan_gap_probability: float = 0.0
+    scan_gap_length: int = 0
 
 
 @dataclass
 class NoiseConfig:
     noise_std: float
+    baseline_noise_jitter: float = 0.0
+    gain_amplitude_std: float = 0.0
+    gain_phase_std: float = 0.0
 
 
 @dataclass
@@ -77,7 +86,14 @@ class ModelConfig:
     visibility_representation: str = "real_imag"
     include_uv_coords: bool = False
     include_mask_channel: bool = True
+    include_observation_metadata: bool = False
     uncertainty_head: bool = False
+    refinement_channels: int = 8
+    residual_scale: float = 0.25
+    freeze_backbone: bool = False
+    dc_enabled: bool = False
+    dc_weight: float = 1.0
+    dc_learnable: bool = False
 
 
 @dataclass
@@ -90,6 +106,13 @@ class TrainingConfig:
     temporal_loss_weight: float
     grad_clip_norm: float
     heteroscedastic_loss_weight: float = 0.0
+    reconstruction_warmup_epochs: int = 0
+    backbone_checkpoint: str | None = None
+    visibility_loss_weight: float = 0.0
+    closure_loss_weight: float = 0.0
+    closure_max_triangles: int = 24
+    target_visibility_loss_weight: float = 0.0
+    target_closure_loss_weight: float = 0.0
 
 
 @dataclass
@@ -104,7 +127,21 @@ class EvalConfig:
     tikhonov_step_size: float
     compare_reference_baseline: bool = False
     reference_baseline_run_name: str | None = None
+    reference_visibility_run_name: str | None = None
+    reference_residual_run_name: str | None = None
+    reference_ccrr_run_name: str | None = None
     save_comparison_csv: bool = True
+
+
+@dataclass
+class HoldoutConfig:
+    enabled: bool = False
+    strategy: str = "none"
+    support_fraction: float = 1.0
+    train_support_fractions: tuple[float, ...] = (1.0,)
+    eval_support_fractions: tuple[float, ...] = (1.0,)
+    max_triangles: int = 24
+    min_eval_closure_triangles: int = 24
 
 
 @dataclass
@@ -118,6 +155,7 @@ class ExperimentConfig:
     model: ModelConfig
     training: TrainingConfig
     evaluation: EvalConfig
+    holdout: HoldoutConfig
     preset_name: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -146,6 +184,23 @@ def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]
 
 
 def _build_config(payload: dict[str, Any], preset_name: str) -> ExperimentConfig:
+    holdout_payload = dict(payload.get("holdout", {}))
+    train_support_fractions = tuple(
+        float(value)
+        for value in holdout_payload.get(
+            "train_support_fractions",
+            [holdout_payload.get("support_fraction", 1.0)],
+        )
+    )
+    eval_support_fractions = tuple(
+        float(value)
+        for value in holdout_payload.get(
+            "eval_support_fractions",
+            [holdout_payload.get("support_fraction", 1.0)],
+        )
+    )
+    holdout_payload["train_support_fractions"] = train_support_fractions
+    holdout_payload["eval_support_fractions"] = eval_support_fractions
     return ExperimentConfig(
         project=ProjectConfig(**payload["project"]),
         paths=PathsConfig(**payload["paths"]),
@@ -156,6 +211,7 @@ def _build_config(payload: dict[str, Any], preset_name: str) -> ExperimentConfig
         model=ModelConfig(**payload["model"]),
         training=TrainingConfig(**payload["training"]),
         evaluation=EvalConfig(**payload["evaluation"]),
+        holdout=HoldoutConfig(**holdout_payload),
         preset_name=preset_name,
     )
 

@@ -1,0 +1,19 @@
+\begin{table*}
+\centering
+\caption{Release-level public-EHT baseline-track summary with TTO, DPS, and conformal MIW. Positive TTO uplift means lower held-out visibility RMSE than plain EMC. Public UQ reports MIW only because image-domain ground truth is unavailable.}
+\label{tab:public-release-means}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccc}
+\toprule
+Track & Samples & EMC mean & EMC-TTO mean & DPS mean & TTO uplift & EMC MIW & EMC-TTO MIW & Best baseline-track model & Best mean \\
+\midrule
+3C279 2017 (2020-D01-01) & 8 & 0.578206 & 0.350670 & 1.122637 & +0.227536 & 0.167950 & 0.167950 & EMC-TTO & 0.350670 \\
+CenA 2017 (2021-D03-01) & 2 & 0.154797 & 0.341005 & 0.712366 & -0.186207 & 0.167950 & 0.167950 & EMC & 0.154797 \\
+M87 2017 (2019-D01-01) & 8 & 0.423486 & 0.353922 & 0.950601 & +0.069564 & 0.167950 & 0.167950 & Tikhonov & 0.340711 \\
+M87 2018 (2024-D01-01) & 12 & 0.304620 & 0.387885 & 0.990307 & -0.083265 & 0.167950 & 0.167950 & Standalone Visibility & 0.304567 \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}

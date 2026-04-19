@@ -1,0 +1,23 @@
+\begin{center}
+\captionof{table}{Selected pooled public-EHT bootstrap comparisons. Positive mean deltas mean the candidate method has lower held-out visibility RMSE than the reference method.}
+\label{tab:public-bootstrap}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llccc}
+\toprule
+Cohort & Comparison & Mean delta & 95\% CI & $p$-value \\
+\midrule
+Baseline-track & EMC-TTO vs EMC & +0.033507 & [-0.003409, 0.071913] & 0.0825 \\
+Baseline-track & EMC-TTO vs Residual Refinement & +0.088892 & [0.052414, 0.127293] & 0.0000 \\
+Baseline-track & EMC-TTO vs Baseline 3D U-Net & +0.009323 & [-0.000319, 0.019758] & 0.0659 \\
+Baseline-track & EMC-TTO vs eht-imaging bridge & +0.009307 & [-0.000337, 0.019731] & 0.0664 \\
+Baseline-track & EMC-TTO vs Tikhonov & +0.009000 & [-0.000652, 0.019446] & 0.0776 \\
+Station-dropout & EMC-TTO vs EMC & +0.018720 & [-0.018835, 0.055916] & 0.3169 \\
+Station-dropout & EMC-TTO vs Baseline 3D U-Net & +0.016369 & [0.006413, 0.027238] & 0.0024 \\
+Station-dropout & EMC-TTO vs eht-imaging bridge & +0.016370 & [0.006417, 0.027239] & 0.0024 \\
+Station-dropout & EMC-TTO vs Tikhonov & +0.016369 & [0.006409, 0.027245] & 0.0024 \\
+\bottomrule
+\end{tabular}
+}
+\end{center}

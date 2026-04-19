@@ -1,0 +1,42 @@
+project:
+  name: dynadiff-vlbi-mnras-bridge
+
+sampling:
+  mode: station_tracks
+  station_count: 14
+  earth_rotation_degrees: 130.0
+  station_jitter: 0.05
+  coverage: 0.08
+  missing_fraction: 0.08
+  hermitian_symmetric: true
+  include_dc: true
+
+noise:
+  noise_std: 0.035
+
+model:
+  model_type: residual_visibility_refinement
+  base_channels: 16
+  refinement_channels: 8
+  dropout: 0.15
+  include_dirty_input: true
+  visibility_representation: real_imag
+  include_uv_coords: true
+  include_mask_channel: true
+  uncertainty_head: true
+  residual_scale: 0.20
+  freeze_backbone: true
+
+training:
+  epochs: 6
+  learning_rate: 0.0008
+  temporal_loss_weight: 0.15
+  heteroscedastic_loss_weight: 0.10
+  reconstruction_warmup_epochs: 2
+  backbone_checkpoint: null
+
+evaluation:
+  compare_reference_baseline: true
+  save_comparison_csv: true
+  reference_baseline_run_name: null
+  reference_visibility_run_name: null

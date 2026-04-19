@@ -1,43 +1,27 @@
 # dynadiff-vlbi
 
-`dynadiff-vlbi` is a small, Colab-first research prototype for uncertainty-aware dynamic black-hole-like imaging from synthetic sparse Fourier measurements. The project now contains two additive research paths:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.2%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 
-- Phase 1 baseline: a reproducible dirty-image-first pipeline with classical baselines and a compact 3D temporal U-Net.
-- Phase 2 upgrade: a visibility-conditioned spatiotemporal model that ingests sparse complex Fourier measurements more directly while keeping the Phase 1 baseline intact as the reference comparator.
+Benchmark-first dynamic VLBI evaluation framework for **earned versus enforced measurement consistency**, with public Event Horizon Telescope release validation.
 
-The goal is still not a full EHT or ngEHT pipeline. This repository is synthetic VLBI-inspired research infrastructure with runnable baselines and clean extension points.
+---
 
-## What the repository includes
+## Overview
 
-- Synthetic grayscale black-hole-like movie generation with a bright ring, azimuthal asymmetry, moving hotspot, optional faint jet, and temporal variability.
-- A sparse noisy Fourier measurement operator with configurable uv coverage, missing coverage, and Gaussian noise.
-- Classical baselines: dirty image reconstruction and a lightweight Tikhonov-style iterative refinement.
-- A compact 3D temporal U-Net baseline trained on dirty reconstructions.
-- A compact visibility-conditioned model with a visibility encoder, optional dirty-image branch, spatiotemporal fusion, and optional heteroscedastic uncertainty head.
-- Monte Carlo dropout uncertainty for the baseline and heteroscedastic predictive uncertainty for the Phase 2 model.
-- Metrics for MSE, PSNR, SSIM, temporal consistency, ring-radius error, and hotspot localization error.
-- CLI scripts, tests, configs, figures, checkpoints, logs, comparison tables, and Colab notebooks.
+`dynadiff-vlbi` accompanies the accompanying manuscript on dynamic Very Long Baseline Interferometry (VLBI) imaging. It packages:
 
-## Project layout
+- A released **64×64 EMC benchmark** with deterministic support / target split manifests.
+- A compact reference implementation of **Earned Measurement Consistency (EMC)** alongside baseline models.
+- **Public EHT validation** over the official calibrated-data releases for M87 (2017, 2018), 3C279 (2017), and Centaurus A (2017).
+- The paper-facing artifact builders that regenerate every figure and table in the manuscript directly from CSV/JSON sources.
 
-```text
-dynadiff-vlbi/
-├── configs/
-├── notebooks/
-├── scripts/
-├── src/dynadiff_vlbi/
-│   ├── data/
-│   ├── evaluation/
-│   ├── models/
-│   ├── physics/
-│   ├── training/
-│   └── utils/
-└── tests/
-```
+The goal is a clean, reproducible infrastructure for benchmark-style evaluation — not a full production EHT or ngEHT pipeline.
 
-## Local setup
+## Installation
 
-Use Python 3.10 or newer. The current repository was validated with `python3.11`.
+Requires Python 3.10+. Validated with Python 3.11 on CPU and CUDA.
 
 ```bash
 python3.11 -m venv .venv
@@ -46,160 +30,69 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-Run the baseline smoke test:
+## Quick start
+
+Run the EMC benchmark end-to-end (support-target sweep, structured holdouts, challenge-inspired realism):
 
 ```bash
-python scripts/run_demo.py --preset smoke
+python scripts/run_emc_benchmark.py --target all --skip-existing
 ```
 
-Run the default 32x32 baseline:
+Regenerate every figure and table in the paper from the produced CSV / JSON artifacts:
 
 ```bash
-python scripts/generate_toy_dataset.py --preset default32
-python scripts/train_baseline.py --preset default32 --run-name train_default32
-python scripts/evaluate_model.py --preset default32 --run-name train_default32
+python scripts/generate_emc_benchmark_artifacts.py
+python scripts/generate_public_eht_suite_artifacts.py
 ```
 
-Run the default 32x32 Phase 2 visibility-conditioned path:
+See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for the end-to-end reproduction recipe, including seed control, compute requirements, and expected wall-clock times.
 
-```bash
-python scripts/generate_toy_dataset.py --base-config configs/phase2_visibility_default32.yaml
-python scripts/train_baseline.py --preset default32 --data-dir data/generated/phase2_visibility_default32 --run-name phase2_default32_baseline_ref --epochs 2
-python scripts/train_baseline.py --base-config configs/phase2_visibility_default32.yaml --run-name phase2_default32_visibility --epochs 2
-python scripts/evaluate_model.py --base-config configs/phase2_visibility_default32.yaml --run-name phase2_default32_visibility --reference-baseline-checkpoint outputs/phase2_default32_baseline_ref/checkpoints/best.pt
-```
-
-Run a small Phase 2 smoke path:
-
-```bash
-python scripts/generate_toy_dataset.py --base-config configs/phase2_visibility_default32.yaml --preset smoke
-python scripts/train_baseline.py --preset smoke --data-dir data/generated/smoke_phase2_visibility_default32 --run-name phase2_smoke_baseline_ref --epochs 1
-python scripts/train_baseline.py --base-config configs/phase2_visibility_default32.yaml --preset smoke --run-name phase2_smoke_visibility --epochs 1
-python scripts/evaluate_model.py --base-config configs/phase2_visibility_default32.yaml --preset smoke --run-name phase2_smoke_visibility --reference-baseline-checkpoint outputs/phase2_smoke_baseline_ref/checkpoints/best.pt
-```
-
-Optional 64x64 experiments:
-
-```bash
-python scripts/generate_toy_dataset.py --preset exp64
-python scripts/train_baseline.py --preset exp64 --run-name train_exp64
-python scripts/evaluate_model.py --preset exp64 --run-name train_exp64
-```
-
-```bash
-python scripts/generate_toy_dataset.py --base-config configs/phase2_visibility_exp64.yaml
-python scripts/train_baseline.py --base-config configs/phase2_visibility_exp64.yaml --run-name phase2_exp64_visibility
-python scripts/evaluate_model.py --base-config configs/phase2_visibility_exp64.yaml --run-name phase2_exp64_visibility
-```
-
-Run tests:
-
-```bash
-python -m pytest
-```
-
-## Google Colab steps
-
-1. Open a new Colab notebook and enable a GPU if available.
-2. Clone or upload this repository into the Colab runtime.
-3. For the Phase 1 baseline, from the repository root run:
-
-```python
-%pip install -e .
-!python scripts/generate_toy_dataset.py --preset default32
-!python scripts/train_baseline.py --preset default32 --run-name colab_default32_demo --epochs 2
-!python scripts/evaluate_model.py --preset default32 --run-name colab_default32_demo
-```
-
-4. For the Phase 2 visibility-conditioned path, run:
-
-```python
-%pip install -e .
-!python scripts/generate_toy_dataset.py --base-config configs/phase2_visibility_default32.yaml --preset smoke
-!python scripts/train_baseline.py --preset smoke --data-dir data/generated/smoke_phase2_visibility_default32 --run-name colab_phase2_baseline_smoke --epochs 1
-!python scripts/train_baseline.py --base-config configs/phase2_visibility_default32.yaml --preset smoke --run-name colab_phase2_visibility_smoke --epochs 2
-!python scripts/evaluate_model.py --base-config configs/phase2_visibility_default32.yaml --preset smoke --run-name colab_phase2_visibility_smoke --reference-baseline-checkpoint outputs/colab_phase2_baseline_smoke/checkpoints/best.pt
-```
-
-5. Open the figures and summaries under `outputs/<run_name>/`.
-6. Ready-made notebooks:
-   - [`notebooks/01_colab_quickstart.ipynb`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/notebooks/01_colab_quickstart.ipynb)
-   - [`notebooks/03_phase2_visibility_quickstart.ipynb`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/notebooks/03_phase2_visibility_quickstart.ipynb)
-
-## Config presets
-
-- `smoke`: very small end-to-end smoke test used by `scripts/run_demo.py`
-- `default32`: main 32x32 Colab-friendly baseline
-- `exp64`: optional 64x64 experiment with slightly larger model width
-
-Phase 2 adds experiment-specific base configs:
-
-- [`configs/phase2_visibility_default32.yaml`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/configs/phase2_visibility_default32.yaml)
-- [`configs/phase2_visibility_exp64.yaml`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/configs/phase2_visibility_exp64.yaml)
-
-The shared defaults live in [`configs/base.yaml`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/configs/base.yaml), while preset overrides live in [`configs/train.yaml`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/configs/train.yaml). When both `--base-config` and `--preset` are provided, custom config values take precedence over overlapping preset keys.
-
-## Phase 2 model path
-
-The Phase 2 upgrade adds a visibility-conditioned reconstruction model without removing the existing dirty-image baseline path. The new model:
-
-- consumes sparse complex visibilities through a real and imaginary channel representation
-- can also ingest dirty reconstructions through an optional image-domain branch
-- fuses visibility and image features in a compact spatiotemporal encoder-decoder
-- can predict a per-pixel log-variance map for a lightweight heteroscedastic uncertainty baseline
-
-Evaluation can compare:
-
-- dirty reconstruction
-- Tikhonov refinement
-- the original 3D U-Net baseline
-- the new visibility-conditioned model
-
-This remains a synthetic research prototype. The new path is meant to study whether direct visibility conditioning helps under sparse Fourier sampling, not to claim telescope-accurate VLBI performance.
-
-## Outputs
-
-Each run writes to:
+## Project structure
 
 ```text
-outputs/<run_name>/
-├── checkpoints/
-├── figures/
-├── logs/
-└── predictions/
+dynadiff-vlbi/
+├── src/dynadiff_vlbi/     # Library: models, physics, training, evaluation, EMC
+├── scripts/               # CLI entry points for datasets, training, benchmarks, artifacts
+├── configs/               # YAML configs for every preset (32x32, 64x64, EMC, Phase 2, CCRR)
+├── tests/                 # Pytest suite
+├── notebooks/             # Colab-friendly walkthroughs
+├── benchmark/             # EMC benchmark release notes and reproducibility snapshot
+├── paper/                 # Manuscript PDF, LaTeX sources, figures, tables, references
+└── theory/                # Consistency-bound derivations and supporting figures
 ```
 
-Typical output files include:
+Generated artifacts (`outputs/`, `data/generated/`, `data/external/`, `data/real/`) are intentionally git-ignored and reproduced locally by the scripts above.
 
-- `checkpoints/best.pt`
-- `checkpoints/latest.pt`
-- `logs/config_snapshot.yaml`
-- `logs/history.csv`
-- `logs/training_summary.json`
-- `logs/evaluation_summary.json`
-- `logs/comparison_metrics.csv` for Phase 2 evaluation
-- `predictions/test_predictions.npz`
-- `figures/sample_*.png`
+## Documentation
 
-Synthetic datasets are written to `data/generated/<experiment_label>/`. For example:
+- [`benchmark/README.md`](benchmark/README.md) — EMC benchmark release, splits, and evaluation protocol.
+- [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) — exact reproduction steps, seeds, and expected runtimes.
+- [`paper/manuscript.pdf`](paper/manuscript.pdf) — current manuscript draft.
 
-- baseline smoke: `data/generated/smoke/`
-- baseline default32: `data/generated/default32/`
-- Phase 2 smoke: `data/generated/smoke_phase2_visibility_default32/`
-- Phase 2 default32: `data/generated/phase2_visibility_default32/`
+## Data availability
 
-## Current limitations
+The public validation uses official EHT calibrated-data releases:
 
-- The forward model is VLBI-inspired sparse Fourier sampling, not a telescope-array-accurate EHT or ngEHT simulator.
-- The Phase 1 learned baseline only consumes dirty reconstructions.
-- The Phase 2 model is still compact and synthetic-data-focused. It is not a diffusion model and does not ingest telescope metadata beyond simple uv-style feature formatting.
-- Uncertainty remains lightweight: MC dropout for the Phase 1 model and a heteroscedastic head for the Phase 2 model. Neither should be treated as calibrated posterior uncertainty without further study.
-- The classical refinement baseline is intentionally lightweight and should be treated as a sanity-check comparator, not a strong inverse solver.
-- The synthetic generator is designed for controllable experiments, not astrophysical realism.
+| Release | Target | DOI |
+|:--|:--|:--|
+| `2019-D01-01` | M87 (2017) | [`10.25739/g85n-f134`](https://doi.org/10.25739/g85n-f134) |
+| `2024-D01-01` | M87 (2018 calibrated data) | [`10.25739/epm5-r371`](https://doi.org/10.25739/epm5-r371) |
+| `2020-D01-01` | 3C279 (2017) | [`10.25739/vty0-ve39`](https://doi.org/10.25739/vty0-ve39) |
+| `2021-D03-01` | Centaurus A (2017) | [`10.25739/kejs-2n22`](https://doi.org/10.25739/kejs-2n22) |
 
-## Roadmap
+## Citation
 
-- Real EHT or ngEHT-compatible data loaders and measurement conventions
-- Stronger diffusion-based spatiotemporal priors
-- Posterior sampling and calibration-focused uncertainty analysis
-- Polarization-aware and multi-frequency extensions
+```bibtex
+@unpublished{zacharioudakis2026earned,
+  author = {Zacharioudakis, Stylianos Georgios},
+  title  = {A reproducible earned-versus-enforced benchmark for dynamic VLBI},
+  year   = {2026},
+  note   = {Manuscript}
+}
+```
+
+Machine-readable metadata is also available in [`CITATION.cff`](CITATION.cff).
+
+## License
+
+Released under the [MIT License](LICENSE).

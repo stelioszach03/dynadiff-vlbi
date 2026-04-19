@@ -1,0 +1,44 @@
+{
+  "points": [
+    {
+      "alpha": 0.2,
+      "support_dim": 13,
+      "target_dim": 51,
+      "enforced_rmse": 0.39496809454438475,
+      "earned_rmse": 0.13769339009117373,
+      "empirical_gap": 0.257274704453211,
+      "conditional_rmse_proxy": 0.13693886244276746,
+      "mutual_information_nats": 20.311306701113423
+    },
+    {
+      "alpha": 0.4,
+      "support_dim": 26,
+      "target_dim": 38,
+      "enforced_rmse": 0.2876079396571584,
+      "earned_rmse": 0.0682769694271248,
+      "empirical_gap": 0.21933097023003362,
+      "conditional_rmse_proxy": 0.06796885714233171,
+      "mutual_information_nats": 25.348148024792323
+    },
+    {
+      "alpha": 0.6,
+      "support_dim": 38,
+      "target_dim": 26,
+      "enforced_rmse": 0.18809925986657552,
+      "earned_rmse": 0.05923126519162823,
+      "empirical_gap": 0.1288679946749473,
+      "conditional_rmse_proxy": 0.058245998880624976,
+      "mutual_information_nats": 25.200072231326438
+    },
+    {
+      "alpha": 0.8,
+      "support_dim": 51,
+      "target_dim": 13,
+      "enforced_rmse": 0.10478404545188962,
+      "earned_rmse": 0.057238204706229014,
+      "empirical_gap": 0.0475458407456606,
+      "conditional_rmse_proxy": 0.05601556782428609,
+      "mutual_information_nats": 20.429645833354108
+    }
+  ]
+}

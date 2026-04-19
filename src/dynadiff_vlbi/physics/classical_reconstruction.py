@@ -29,3 +29,15 @@ def tikhonov_iterative_reconstruction(
         estimate = estimate - step_size * gradient
         estimate = np.clip(estimate, 0.0, 1.0)
     return estimate.astype(np.float32)
+
+
+def visibility_data_consistency_projection(
+    prediction: np.ndarray,
+    measurements: np.ndarray,
+    mask: np.ndarray,
+) -> np.ndarray:
+    """Project a predicted sequence back onto the observed visibility coefficients."""
+
+    predicted_visibilities = fft2c(prediction)
+    projected = predicted_visibilities * (1.0 - mask) + measurements * mask
+    return np.clip(ifft2c(projected).real, 0.0, 1.0).astype(np.float32)
