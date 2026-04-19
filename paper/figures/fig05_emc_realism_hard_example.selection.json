@@ -1,0 +1,14 @@
+{
+  "sample_index": 27,
+  "frame_index": 1,
+  "selection_rule": "top-quartile hard sample by ccrr heldout_visibility_rmse, then max emc gain",
+  "reference_key": "ccrr",
+  "candidate_key": "emc",
+  "metric_key": "heldout_visibility_rmse",
+  "sample_level_gain": 0.07164442539215088,
+  "reference_value": 0.24830412864685059,
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_challenge_inspired_realism_protocol/predictions/support_20.npz",
+  "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_challenge_inspired_realism_protocol/logs/per_sample_support_20.csv",
+  "support_fraction_tag": "20",
+  "condition_title": "Challenge-inspired realism"
+}

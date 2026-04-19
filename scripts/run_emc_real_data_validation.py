@@ -21,18 +21,18 @@ from dynadiff_vlbi.utils.seed import set_seed  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-config", default="configs/emc_real_public_eht_validation_default64.yaml")
-    parser.add_argument("--preset", default="default64")
-    parser.add_argument("--data-dir", default="data/real/public_eht_suite/m87_2017_2019-d01-01")
-    parser.add_argument("--run-name", default="emc_real_public_eht_validation_default64")
+    parser.add_argument("--base-config", default="configs/emc_real_public_eht_validation.yaml")
+    parser.add_argument("--preset", default="default32")
+    parser.add_argument("--data-dir", default="data/real/eht_public_m87_2017_2019-d01-01_emc")
+    parser.add_argument("--run-name", default="emc_real_public_eht_validation")
     parser.add_argument("--output-root", default="outputs")
-    parser.add_argument("--baseline-checkpoint", default="outputs/ccrr_default64_seed7_baseline_ref/checkpoints/best.pt")
-    parser.add_argument("--visibility-checkpoint", default="outputs/ccrr_default64_seed7_visibility_ref/checkpoints/best.pt")
-    parser.add_argument("--residual-checkpoint", default="outputs/ccrr_default64_seed7_residual_ref/checkpoints/best.pt")
-    parser.add_argument("--ccrr-checkpoint", default="outputs/ccrr_default64_seed7_main/checkpoints/best.pt")
+    parser.add_argument("--baseline-checkpoint", default="outputs/ccrr_seed7_baseline_ref/checkpoints/best.pt")
+    parser.add_argument("--visibility-checkpoint", default="outputs/ccrr_seed7_visibility_ref/checkpoints/best.pt")
+    parser.add_argument("--residual-checkpoint", default="outputs/ccrr_seed7_residual_ref/checkpoints/best.pt")
+    parser.add_argument("--ccrr-checkpoint", default="outputs/ccrr_seed7_main/checkpoints/best.pt")
     parser.add_argument(
         "--emc-checkpoint",
-        default="outputs/emc_benchmark_baseline_tracks_default64_main_noclosure/checkpoints/best.pt",
+        default="outputs/emc_benchmark_baseline_tracks_main_noclosure/checkpoints/best.pt",
     )
     return parser.parse_args()
 
@@ -68,7 +68,6 @@ def main() -> int:
             ),
             ComparatorSpec("ccrr", "CCRR", "phase2", (ROOT / args.ccrr_checkpoint)),
             ComparatorSpec("emc", "EMC", "phase2", (ROOT / args.emc_checkpoint)),
-            ComparatorSpec("emc_tto", "EMC-TTO", "phase2", (ROOT / args.emc_checkpoint)),
         ],
         device=get_device(),
     )
@@ -78,7 +77,6 @@ def main() -> int:
         comparators=comparators,
         output_dir=output_dir,
         support_fractions=config.holdout.eval_support_fractions,
-        use_domain_adaptation=True,
     )
     print(summary)
     return 0

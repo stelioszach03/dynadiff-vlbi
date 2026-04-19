@@ -79,7 +79,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-config", default=DEFAULT_BASE_CONFIG)
     parser.add_argument("--train-config", default="configs/train.yaml")
     parser.add_argument("--eval-config", default="configs/eval.yaml")
-    parser.add_argument("--preset", default=None, choices=["smoke", "default32", "default64", "exp64"])
+    parser.add_argument("--preset", default=None, choices=["smoke", "default32", "exp64"])
     parser.add_argument(
         "--model-type",
         default=None,

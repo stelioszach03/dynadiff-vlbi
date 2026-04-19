@@ -53,13 +53,9 @@ def _support_tags(summary: dict[str, Any]) -> list[str]:
 
 
 def _model_metrics(summary: dict[str, Any], support_tag: str, model_key: str) -> dict[str, float]:
-    models = summary["support_fractions"][support_tag]["models"]
-    if model_key not in models:
-        reference_metrics = next(iter(models.values()))
-        return {key: float("nan") for key in reference_metrics}
     return {
         key: float(value)
-        for key, value in models[model_key].items()
+        for key, value in summary["support_fractions"][support_tag]["models"][model_key].items()
     }
 
 
@@ -106,7 +102,6 @@ def build_family_matrix_rows(specs: list[BenchmarkProtocolSpec]) -> list[dict[st
             baseline_metrics = _model_metrics(summary, support_tag, "baseline_learned")
             residual_metrics = _model_metrics(summary, support_tag, "residual_refinement")
             ccrr_metrics = _model_metrics(summary, support_tag, "ccrr")
-            dps_metrics = _model_metrics(summary, support_tag, "dps")
             rows.append(
                 {
                     "condition": spec.key,
@@ -122,9 +117,6 @@ def build_family_matrix_rows(specs: list[BenchmarkProtocolSpec]) -> list[dict[st
                     "baseline_heldout_visibility_rmse": float(baseline_metrics["heldout_visibility_rmse"]),
                     "residual_heldout_visibility_rmse": float(residual_metrics["heldout_visibility_rmse"]),
                     "ccrr_heldout_visibility_rmse": float(ccrr_metrics["heldout_visibility_rmse"]),
-                    "dps_heldout_visibility_rmse": float(dps_metrics["heldout_visibility_rmse"]),
-                    "emc_coverage_90": float("nan"),
-                    "emc_miw": float("nan"),
                     "emc_vs_baseline": "win"
                     if float(emc_metrics["heldout_visibility_rmse"]) < float(baseline_metrics["heldout_visibility_rmse"])
                     else "loss",
@@ -180,8 +172,6 @@ def save_family_support_figure(
         x_values = [int(tag) for tag in _support_tags(summary)]
         for model_key in LEARNED_MODEL_ORDER:
             heldout_vis = [_model_metrics(summary, str(tag), model_key)["heldout_visibility_rmse"] for tag in x_values]
-            if all(math.isnan(float(value)) for value in heldout_vis):
-                continue
             axis.plot(
                 x_values,
                 heldout_vis,
@@ -265,9 +255,6 @@ def write_family_matrix_table(path: str | Path, rows: list[dict[str, Any]]) -> N
             _fmt(float(row["baseline_heldout_visibility_rmse"])),
             _fmt(float(row["residual_heldout_visibility_rmse"])),
             _fmt(float(row["ccrr_heldout_visibility_rmse"])),
-            _fmt(float(row.get("dps_heldout_visibility_rmse", float("nan")))),
-            _fmt(float(row.get("emc_coverage_90", float("nan")))),
-            _fmt(float(row.get("emc_miw", float("nan")))),
             str(row["emc_vs_baseline"]),
             str(row["emc_vs_residual"]),
             str(row["emc_vs_ccrr"]),
@@ -283,9 +270,6 @@ def write_family_matrix_table(path: str | Path, rows: list[dict[str, Any]]) -> N
             "Baseline",
             "Residual",
             "CCRR",
-            "DPS",
-            "EMC 90% cov.",
-            "EMC MIW",
             "EMC vs baseline",
             "EMC vs residual",
             "EMC vs CCRR",
@@ -294,7 +278,6 @@ def write_family_matrix_table(path: str | Path, rows: list[dict[str, Any]]) -> N
         title="EMC Benchmark Matrix",
         notes=[
             "Each family uses the same dataset split and support-fraction sweep; only the structured support-target partition changes.",
-            "DPS is rerun only on the baseline-track family in this add-on cycle; untouched families remain n/a by design.",
             "The matrix is benchmark-first: the central question is earned recovery on unseen held-out measurements, not full-mask reconstruction alone.",
         ],
     )

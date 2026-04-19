@@ -15,12 +15,10 @@ from dynadiff_vlbi.data.measurement_holdout import (
     build_structured_holdout_split,
     closure_triangle_support_counts,
 )
-from dynadiff_vlbi.emc.domain_bridge import EHTDomainBridge
-from dynadiff_vlbi.emc.inference import predict_real_phase2
 from dynadiff_vlbi.evaluation.emc_protocol import (
     LoadedComparator,
     _predict_baseline,
-    _predict_dps,
+    _predict_phase2,
     _support_fraction_tag,
     aggregate_metrics,
 )
@@ -171,9 +169,6 @@ def evaluate_real_data_condition(
     comparators: dict[str, LoadedComparator],
     output_dir: Path,
     support_fractions: tuple[float, ...],
-    use_domain_adaptation: bool = True,
-    tto_steps: int = 50,
-    tto_lr: float = 1.0e-4,
 ) -> dict[str, Any]:
     """Evaluate EMC-style support/target protocols on real measurement products."""
 
@@ -227,16 +222,10 @@ def evaluate_real_data_condition(
             "Sigma-weighted diagnostics use released Isigma values as observation-domain residual weights, "
             "not as a full calibrated likelihood model."
         ),
-        "domain_adaptation": {
-            "enabled": bool(use_domain_adaptation),
-            "tto_steps": int(tto_steps),
-            "tto_lr": float(tto_lr),
-        },
         "support_fractions": {},
         "comparator_labels": {key: value.label for key, value in comparators.items()},
     }
     rows: list[dict[str, Any]] = []
-    explicit_emc_tto = "emc_tto" in comparators
 
     for support_fraction in support_fractions:
         fraction_key = _support_fraction_tag(float(support_fraction))
@@ -289,14 +278,6 @@ def evaluate_real_data_condition(
                     continue
                 if comparator.kind == "tikhonov":
                     continue
-                if comparator.kind == "dps":
-                    predictions[key] = _predict_dps(
-                        comparator.model,
-                        split.support_measurements,
-                        split.support_mask,
-                        split.support_dirty.astype(np.float32),
-                    )
-                    continue
                 if comparator.kind == "baseline":
                     predictions[key] = _predict_baseline(
                         model=comparator.model,  # type: ignore[arg-type]
@@ -324,14 +305,7 @@ def evaluate_real_data_condition(
                         mjd=float(dataset.get("mjd", np.asarray([0.0], dtype=np.float32))[sample_index]),
                     )
                     continue
-                adapt_this_model = bool(
-                    use_domain_adaptation
-                    and (
-                        key.endswith("_tto")
-                        or (key == "emc" and not explicit_emc_tto)
-                    )
-                )
-                phase2_prediction = predict_real_phase2(
+                phase2_prediction = _predict_phase2(
                     model=comparator.model,  # type: ignore[arg-type]
                     model_config=comparator.model_config,  # type: ignore[arg-type]
                     support_vis_real=support_vis_real,
@@ -343,12 +317,8 @@ def evaluate_real_data_condition(
                     frame_uv_indices=frame_uv_indices,
                     measurements=measurements,
                     device=device,
-                    use_domain_adaptation=adapt_this_model,
-                    domain_bridge=EHTDomainBridge(),
-                    tto_steps=tto_steps,
-                    tto_lr=tto_lr,
                 )
-                predictions[key] = phase2_prediction.mean
+                predictions[key] = phase2_prediction["mean"]
 
             for key, prediction in predictions.items():
                 metrics = _real_prediction_metrics(
@@ -377,13 +347,6 @@ def evaluate_real_data_condition(
                     "support_unit_count": float(split.support_unit_count),
                     "model": key,
                     "model_label": comparators[key].label,
-                    "domain_adaptation": float(
-                        use_domain_adaptation
-                        and (
-                            key.endswith("_tto")
-                            or (key == "emc" and not explicit_emc_tto)
-                        )
-                    ),
                     "release_code": summary["release_code"],
                     "target": summary["target"],
                     "campaign_year": summary["campaign_year"],

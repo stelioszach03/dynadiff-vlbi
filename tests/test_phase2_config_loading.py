@@ -65,44 +65,6 @@ def test_residual_refinement_exp64_config_builds_cleanly() -> None:
     build_model(config.model)
 
 
-def test_default64_phase2_and_emc_configs_build_cleanly() -> None:
-    visibility = load_experiment_config(
-        base_path=ROOT / "configs/phase2_visibility_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / "configs/base.yaml",
-    )
-    residual = load_experiment_config(
-        base_path=ROOT / "configs/phase2_residual_refine_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / "configs/base.yaml",
-    )
-    ccrr = load_experiment_config(
-        base_path=ROOT / "configs/ccrr_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / "configs/base.yaml",
-    )
-    emc = load_experiment_config(
-        base_path=ROOT / "configs/emc_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / "configs/base.yaml",
-    )
-    assert visibility.dataset.image_size == 64
-    assert residual.model.refinement_channels == 16
-    assert ccrr.model.base_channels == 24
-    assert emc.model.base_channels == 24
-    build_model(residual.model)
-    build_model(ccrr.model)
-    build_model(emc.model)
-
-
 def test_mnras_bridge_config_loading_preserves_station_track_sampling() -> None:
     config = load_experiment_config(
         base_path=ROOT / "configs/mnras_realism_bridge_default32.yaml",

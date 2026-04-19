@@ -14,6 +14,7 @@ version: 0.1.0
 keywords:
   - dynamic VLBI
   - benchmark
-  - scientific machine learning
+  - score-based diffusion
   - Event Horizon Telescope
-abstract: "Benchmark-first dynamic VLBI evaluation framework for earned versus enforced measurement consistency with controlled public EHT measurement-domain validation."
+  - measurement consistency
+abstract: "Evaluation framework and score-based diffusion reference implementation for earned versus enforced measurement consistency in dynamic VLBI imaging, with deterministic support/target partitioning and public-release EHT validation."

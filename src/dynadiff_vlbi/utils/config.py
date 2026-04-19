@@ -94,6 +94,7 @@ class ModelConfig:
     dc_enabled: bool = False
     dc_weight: float = 1.0
     dc_learnable: bool = False
+    num_levels: int = 2
 
 
 @dataclass

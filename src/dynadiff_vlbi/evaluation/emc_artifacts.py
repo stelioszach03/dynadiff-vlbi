@@ -15,7 +15,6 @@ import numpy as np
 
 from dynadiff_vlbi.evaluation.paper_artifacts import (
     format_value,
-    relativize_payload_paths,
     save_json,
     write_csv,
     write_markdown_table,
@@ -34,7 +33,6 @@ MODEL_LABELS: dict[str, str] = {
     "residual_refinement": "Residual Refinement",
     "ccrr": "CCRR",
     "emc": "EMC",
-    "dps": "DPS",
 }
 
 LEARNED_MODEL_ORDER = [
@@ -42,7 +40,6 @@ LEARNED_MODEL_ORDER = [
     "residual_refinement",
     "ccrr",
     "emc",
-    "dps",
 ]
 FULL_MODEL_ORDER = [
     "dirty",
@@ -54,7 +51,6 @@ MODEL_COLORS = {
     "residual_refinement": "#2563eb",
     "ccrr": "#7c3aed",
     "emc": "#dc2626",
-    "dps": "#f59e0b",
 }
 
 
@@ -113,11 +109,7 @@ def _support_tags(summary: dict[str, Any]) -> list[str]:
 
 
 def _model_metrics(summary: dict[str, Any], support_tag: str, model_key: str) -> dict[str, float]:
-    models = summary["support_fractions"][support_tag]["models"]
-    if model_key not in models:
-        reference_metrics = next(iter(models.values()))
-        return {key: float("nan") for key in reference_metrics}
-    model_metrics = models[model_key]
+    model_metrics = summary["support_fractions"][support_tag]["models"][model_key]
     return {key: float(value) for key, value in model_metrics.items()}
 
 
@@ -462,7 +454,6 @@ def save_emc_qualitative_figure(
             "condition_title": condition_title,
         }
     )
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 
@@ -553,7 +544,6 @@ def save_emc_secondary_qualitative_figure(
             "figure_layout": [label for _, label in column_specs] + ["Held-out target mask"],
         }
     )
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 

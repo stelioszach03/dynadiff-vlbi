@@ -1,50 +1,40 @@
 # Table Manifest
 
-## Table 1: Default64 Benchmark Matrix
+## Table 1: EMC Benchmark Matrix
 
-- Artifact file: [`paper/tables/table01_default64_benchmark_matrix.tex`](./tables/table01_default64_benchmark_matrix.tex)
+- Artifact file: [`outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.md`](../outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.md)
 - CSV source: [`outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.csv`](../outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.csv)
 - Caption:
 
-  Default64 synthetic benchmark matrix across the three structured holdout families and four support fractions. The table reports held-out visibility RMSE for EMC and the main learned comparators under identical support-target partitions, adds the bounded DPS comparator on the rerun baseline-track family only, and reports EMC conformal empirical coverage and mean interval width (MIW).
+  Default32 benchmark matrix across the three structured holdout families and the four support fractions. The table reports held-out visibility RMSE for EMC and the main learned comparators under identical support-target partitions. It is the core tabular evidence that earned measurement consistency is not a single-geometry effect.
 
-## Table 2: Public EHT Release Means
+## Table 2: Public EHT Observation-Domain Benchmark Matrix
 
-- Artifact file: [`paper/tables/table02_public_eht_release_means.tex`](./tables/table02_public_eht_release_means.tex)
-- CSV source: [`paper/tables/table02_public_eht_release_robustness.csv`](./tables/table02_public_eht_release_robustness.csv)
+- Artifact file: [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md)
+- CSV source: [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.csv`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.csv)
 - Caption:
 
-  Release-level public-EHT baseline-track summary with test-time optimization, DPS, and conformal MIW. The table reports mean held-out visibility RMSE for EMC, EMC-TTO, and DPS on each official release, together with MIW for EMC-family uncertainty intervals and the best baseline-track comparator on that release.
+  Public EHT observation-domain benchmark matrix across the official calibrated-data releases used in the paper: M87 2017, M87 2018, 3C279 2017, and Centaurus A 2017. The table reports held-out visibility recovery on real measured coefficients withheld from both model input and support-set data consistency. It is included to test whether the benchmark question remains meaningful on released measurements, not to claim image-domain ground-truth recovery.
 
-## Table 3: Public Family Robustness
+## Table 3: Synthetic-to-Public Robustness Summary
 
-- Artifact file: [`paper/tables/table03_public_family_robustness.tex`](./tables/table03_public_family_robustness.tex)
-- CSV source: [`paper/tables/table03_public_release_gaps.csv`](./tables/table03_public_release_gaps.csv)
+- Artifact file: [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md)
+- CSV source: [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.csv`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.csv)
 - Caption:
 
-  Release-level robustness across the public baseline-track and station-dropout families. The table makes the release-by-release heterogeneity explicit and records which model is best under each split family.
+  Public-EHT release robustness summary across the baseline-track and station-dropout families. The table exposes release-level heterogeneity, the EMC family gap between the two deterministic public holdout families, and the best comparator on each release under each family.
 
-## Table 4: Public Bootstrap Summary
+## Table 4: EMC Component Ablations
 
-- Artifact file: [`paper/tables/table04_public_bootstrap.tex`](./tables/table04_public_bootstrap.tex)
-- CSV source: [`paper/tables/table04_public_bootstrap_stats.csv`](./tables/table04_public_bootstrap_stats.csv)
+- Artifact file: [`outputs/mnras_real_data_artifacts/tables/emc_component_ablations.md`](../outputs/mnras_real_data_artifacts/tables/emc_component_ablations.md)
+- CSV source: [`outputs/mnras_real_data_artifacts/tables/emc_component_ablations.csv`](../outputs/mnras_real_data_artifacts/tables/emc_component_ablations.csv)
 - Caption:
 
-  Selected pooled public-EHT paired-bootstrap comparisons. Positive mean deltas indicate lower held-out visibility RMSE for the candidate method than for the reference method.
-
-## Table 5: Seed Robustness
-
-- Artifact file: [`paper/tables/table05_seed_robustness.tex`](./tables/table05_seed_robustness.tex)
-- CSV source: [`paper/tables/table05_seed_robustness.csv`](./tables/table05_seed_robustness.csv)
-- Caption:
-
-  Bounded five-seed robustness study on the default64 baseline-track family over seeds 7, 19, 31, 42, and 137. This table is included because it tempers the single released breadth matrix and shows that residual refinement is the strongest mean learned comparator on this core family.
+  Compact ablation summary for the default32 baseline-track EMC protocol, averaged over the full support sweep. The table isolates the support-target holdout objective, support-set data consistency, closure-aware supervision, metadata conditioning, and uncertainty head. In the current regime, closure remains secondary rather than dominant.
 
 ## Notes
 
-- Table 1 remains the central synthetic breadth table.
-- Tables 2 through 4 make the public-EHT story release-aware rather than pooled-only.
-- DPS is intentionally bounded to the baseline-track add-on path and is left as `n/a` outside the rerun family rather than imputed.
-- Public UQ reports MIW only, because released public-EHT data do not provide image-domain ground truth for coverage claims.
-- Table 5 is essential to the final paper because it narrows the method claim and strengthens reviewer confidence in the benchmark framing.
-- The legacy lower-resolution ablation table remains in the release package for auditability, but it is not part of the main `manuscript_v2` evidence stack.
+- Table 1 and Figure 2 remain the central synthetic benchmark evidence.
+- Table 2 is the main astronomy-facing validation table because it uses official public EHT released measurements rather than synthetic data.
+- Table 3 exists to make the release-level public robustness picture explicit rather than leaving it implicit in pooled numbers alone.
+- Table 4 clarifies attribution and keeps closure from being overstated.

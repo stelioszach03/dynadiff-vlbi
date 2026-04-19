@@ -10,7 +10,6 @@ import pytest
 from dynadiff_vlbi.evaluation.emc_artifacts import save_emc_secondary_qualitative_figure
 from dynadiff_vlbi.evaluation.public_eht_suite_artifacts import (
     PublicTrackSpec,
-    build_public_matrix_rows,
     save_public_qualitative_figure,
     select_public_qualitative_example,
 )
@@ -221,36 +220,3 @@ def test_save_public_qualitative_figure_reads_bundle_and_writes_expected_labels(
     assert "non-negative" not in manifest["selection_rule"]
     assert (tmp_path / "public.png").exists()
     assert (tmp_path / "public.svg").exists()
-
-
-def test_build_public_matrix_rows_accepts_emc_tto_in_summary() -> None:
-    summary = {
-        "target": "M87",
-        "campaign_year": "2018",
-        "release_code": "2024-D01-01",
-        "sample_count": 8,
-        "support_fractions": {
-            "60": {
-                "support_fraction": 0.6,
-                "mean_target_coefficients": 120.0,
-                "mean_all_target_triangles": 8.0,
-                "days_present": [95],
-                "bands_present": ["230"],
-                "models": {
-                    "dirty": {"heldout_visibility_rmse": 0.40, "observed_visibility_rmse": 0.31, "heldout_reduced_chi2": 1.2},
-                    "tikhonov": {"heldout_visibility_rmse": 0.30, "observed_visibility_rmse": 0.28, "heldout_reduced_chi2": 1.1},
-                    "ehtim_bridge": {"heldout_visibility_rmse": 0.22, "observed_visibility_rmse": 0.24, "heldout_reduced_chi2": 1.0},
-                    "baseline_learned": {"heldout_visibility_rmse": 0.18, "observed_visibility_rmse": 0.20, "heldout_reduced_chi2": 0.9},
-                    "residual_refinement": {"heldout_visibility_rmse": 0.16, "observed_visibility_rmse": 0.18, "heldout_reduced_chi2": 0.8},
-                    "ccrr": {"heldout_visibility_rmse": 0.15, "observed_visibility_rmse": 0.17, "heldout_reduced_chi2": 0.7},
-                    "emc": {"heldout_visibility_rmse": 0.14, "observed_visibility_rmse": 0.16, "heldout_reduced_chi2": 0.6},
-                    "emc_tto": {"heldout_visibility_rmse": 0.12, "observed_visibility_rmse": 0.15, "heldout_reduced_chi2": 0.5},
-                },
-            }
-        },
-    }
-
-    rows = build_public_matrix_rows([summary])
-
-    assert rows[0]["best_heldout_model"] == "emc_tto"
-    assert rows[0]["emc_tto_heldout_visibility_rmse"] == pytest.approx(0.12)

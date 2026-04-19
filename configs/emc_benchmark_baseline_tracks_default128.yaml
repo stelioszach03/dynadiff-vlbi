@@ -1,0 +1,75 @@
+project:
+  name: dynadiff-vlbi-emc-128-benchmark-baseline-tracks
+
+dataset:
+  train_size: 512
+  val_size: 128
+  test_size: 128
+  image_size: 128
+  sequence_length: 8
+  ring_width: 0.04
+  hotspot_width: 0.05
+  hotspot_radius: 0.35
+
+sampling:
+  mode: station_tracks
+  station_count: 12
+  earth_rotation_degrees: 110.0
+  station_jitter: 0.04
+  coverage: 0.06
+  radial_exponent: 1.6
+  missing_fraction: 0.08
+  hermitian_symmetric: true
+  include_dc: true
+
+noise:
+  noise_std: 0.025
+
+model:
+  model_type: emc_ccrr
+  base_channels: 32
+  refinement_channels: 16
+  dropout: 0.12
+  num_levels: 3
+  include_dirty_input: true
+  visibility_representation: real_imag
+  include_uv_coords: true
+  include_mask_channel: true
+  include_observation_metadata: true
+  uncertainty_head: true
+  residual_scale: 0.20
+  freeze_backbone: true
+  dc_enabled: true
+  dc_weight: 1.0
+  dc_learnable: false
+
+training:
+  learning_rate: 0.0005
+  batch_size: 2
+  epochs: 15
+  weight_decay: 0.00002
+  temporal_loss_weight: 0.15
+  heteroscedastic_loss_weight: 0.10
+  reconstruction_warmup_epochs: 3
+  visibility_loss_weight: 0.02
+  closure_loss_weight: 0.0
+  target_visibility_loss_weight: 0.06
+  target_closure_loss_weight: 0.0
+  closure_max_triangles: 48
+
+holdout:
+  enabled: true
+  strategy: baseline_track_blocks
+  support_fraction: 0.6
+  train_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2
+  eval_support_fractions:
+    - 0.8
+    - 0.6
+    - 0.4
+    - 0.2
+  max_triangles: 48
+  min_eval_closure_triangles: 48

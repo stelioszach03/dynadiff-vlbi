@@ -1,63 +1,65 @@
 # EMC Benchmark Release
 
-This directory documents the benchmark-first release path for `dynadiff-vlbi`.
+This directory documents the benchmark-first paper path for `dynadiff-vlbi`.
 
 The benchmark is built around one scientific distinction:
 
-- **enforced measurement consistency**: coefficients the model was directly given or that a support-set data-consistency layer forced it to match
-- **earned measurement consistency**: coefficients withheld from both the model input and the support-set data-consistency layer, then evaluated as unseen targets
+- enforced measurement consistency: coefficients the model was directly given or that a data-consistency layer forced it to match
+- earned measurement consistency: coefficients withheld from both the model input and the support-set data-consistency layer, then evaluated as unseen targets
 
-EMC is the current learned reference implementation, but the benchmark is larger than one model. The release fixes the support-target logic, support fractions, comparator protocol, and artifact layout so future methods can be compared on the same structured dynamic VLBI-style task.
+The current learned reference implementation is EMC, but the benchmark is larger than one model. The release fixes the holdout logic, support fractions, comparator protocol, and artifact layout so future methods can be compared on the same structured sparse VLBI-inspired task.
 
-## Fixed benchmark scope
+The benchmark release is synthetic and protocol-first. A separate public-EHT observation-domain validation path exists elsewhere in the repository and should be read as complementary astronomy-facing validation rather than as part of the fixed benchmark release.
 
-- project seed: `7`
-- support fractions: `80%`, `60%`, `40%`, `20%`
-- structured holdout families:
+## One-command reproduction
+
+From the repository root:
+
+```bash
+python3.11 scripts/run_emc_benchmark.py --target all --skip-existing && \
+python3.11 scripts/generate_emc_benchmark_artifacts.py
+```
+
+This command:
+
+- runs the benchmark families
+- runs the challenge-inspired realism track
+- writes deterministic split manifests
+- writes resolved config manifests
+- exports benchmark tables and figures
+
+For the complementary public-M87 validation and the MNRAS-strengthening artifacts, use the top-level README commands instead of treating that path as part of the fixed benchmark release.
+
+For the expanded multi-release public-EHT suite, including the frozen `eht-imaging bridge`, see:
+
+- [`PUBLIC_EHT_VALIDATION.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PUBLIC_EHT_VALIDATION.md)
+- [`REVIEW_SNAPSHOT.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/REVIEW_SNAPSHOT.md)
+
+## Fixed benchmark factors
+
+- Project seed: `7`
+- Support fractions: `0.8`, `0.6`, `0.4`, `0.2`
+- Structured holdout families:
   - `baseline_track_blocks`
   - `scan_segment_blocks`
   - `station_dropout`
-- challenge-inspired realism track:
+- Realism track:
   - `challenge_inspired_realism`
-- learned comparator core:
+- Comparator set:
+  - dirty
+  - Tikhonov
   - baseline 3D U-Net
   - residual refinement
   - CCRR
   - EMC
 
-The fixed benchmark release is synthetic and protocol-first. The public-EHT suite is complementary astronomy-facing validation, documented separately.
-
-## One-command benchmark reproduction
-
-```bash
-python3.11 scripts/run_emc_benchmark.py --target all --skip-existing
-python3.11 scripts/generate_emc_benchmark_artifacts.py
-```
-
-This path:
-
-- runs the three benchmark families
-- runs the challenge-inspired realism track
-- exports deterministic split manifests
-- exports resolved config manifests
-- writes benchmark tables and figures
-
-## Complementary public-EHT suite
-
-For the multi-release public-EHT observation-domain suite, including the frozen `eht-imaging bridge`, use:
-
-- [`PUBLIC_EHT_VALIDATION.md`](PUBLIC_EHT_VALIDATION.md)
-- [`REVIEW_SNAPSHOT.md`](REVIEW_SNAPSHOT.md)
-
-## Required reporting
+## What must be reported
 
 At minimum, a method should report:
 
-- support fraction
-- holdout family
 - held-out visibility RMSE
 - held-out closure-phase MAE when all-target triangle support is sufficient
-- support visibility RMSE separately from held-out performance
+- support-set visibility RMSE separately from held-out performance
 - MSE
 - SSIM
 - temporal consistency
@@ -66,8 +68,10 @@ At minimum, a method should report:
 
 ## Key files
 
-- Benchmark card: [`BENCHMARK_CARD.md`](BENCHMARK_CARD.md)
-- Protocol card: [`PROTOCOL_CARD.md`](PROTOCOL_CARD.md)
-- Expected outputs: [`EXPECTED_OUTPUTS.md`](EXPECTED_OUTPUTS.md)
-- Release checklist: [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
-- Leaderboard template: [`leaderboard_template.csv`](leaderboard_template.csv)
+- Public-EHT validation: [`PUBLIC_EHT_VALIDATION.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PUBLIC_EHT_VALIDATION.md)
+- Review snapshot: [`REVIEW_SNAPSHOT.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/REVIEW_SNAPSHOT.md)
+- Benchmark card: [`BENCHMARK_CARD.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/BENCHMARK_CARD.md)
+- Protocol card: [`PROTOCOL_CARD.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PROTOCOL_CARD.md)
+- Expected outputs: [`EXPECTED_OUTPUTS.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/EXPECTED_OUTPUTS.md)
+- Release checklist: [`RELEASE_CHECKLIST.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/RELEASE_CHECKLIST.md)
+- Leaderboard template: [`leaderboard_template.csv`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/leaderboard_template.csv)

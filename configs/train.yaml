@@ -4,7 +4,7 @@ presets:
       train_size: 16
       val_size: 4
       test_size: 4
-      image_size: 64
+      image_size: 32
       sequence_length: 4
     sampling:
       coverage: 0.10
@@ -55,18 +55,17 @@ presets:
       ring_width: 0.06
       hotspot_width: 0.07
     sampling:
-      coverage: 0.12
+      coverage: 0.10
       missing_fraction: 0.10
     noise:
       noise_std: 0.03
     model:
       base_channels: 24
       dropout: 0.15
-      refinement_channels: 16
-      residual_scale: 0.18
+      num_levels: 2
     training:
       batch_size: 4
-      epochs: 8
+      epochs: 10
       learning_rate: 0.0008
       temporal_loss_weight: 0.20
 
@@ -92,3 +91,35 @@ presets:
       epochs: 6
       learning_rate: 0.0008
       temporal_loss_weight: 0.20
+
+  default128:
+    dataset:
+      train_size: 512
+      val_size: 128
+      test_size: 128
+      image_size: 128
+      sequence_length: 8
+      ring_width: 0.04
+      hotspot_width: 0.05
+      hotspot_radius: 0.35
+    sampling:
+      coverage: 0.06
+      radial_exponent: 1.6
+      missing_fraction: 0.10
+    noise:
+      noise_std: 0.025
+    model:
+      base_channels: 32
+      dropout: 0.12
+      num_levels: 3
+    training:
+      batch_size: 2
+      epochs: 15
+      learning_rate: 0.0005
+      weight_decay: 0.00002
+      temporal_loss_weight: 0.20
+    evaluation:
+      mc_samples: 8
+      num_visualizations: 4
+      frames_to_plot: 4
+      figure_dpi: 200

@@ -16,7 +16,7 @@ dataset:
   train_size: 256
   val_size: 64
   test_size: 64
-  image_size: 64
+  image_size: 32
   sequence_length: 8
   ring_radius: 0.42
   ring_width: 0.08

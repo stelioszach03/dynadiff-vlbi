@@ -1,0 +1,6 @@
+{
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/compare_default32_residual_refine_fair8/predictions/test_predictions.npz",
+  "sample_index": 17,
+  "frame_index": 5,
+  "selection_rule": "maximum error-uncertainty correlation over samples, then over frames"
+}

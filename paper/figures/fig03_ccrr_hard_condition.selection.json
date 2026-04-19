@@ -1,0 +1,8 @@
+{
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/ccrr_sparse_uv_main/predictions/test_predictions.npz",
+  "selection_mode": "hard",
+  "reference_key": "residual_refinement",
+  "candidate_key": "ccrr",
+  "sample_index": 10,
+  "frame_index": 7
+}

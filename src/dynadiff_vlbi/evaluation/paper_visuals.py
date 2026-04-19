@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from dynadiff_vlbi.evaluation.paper_artifacts import relativize_payload_paths
-
 
 IMAGE_CMAP = "inferno"
 UNCERTAINTY_CMAP = "viridis"
@@ -272,7 +270,6 @@ def save_condition_comparison_figure(
 
     selection_path = Path(selection_manifest)
     selection_path.parent.mkdir(parents=True, exist_ok=True)
-    selection_payload = relativize_payload_paths(selection_payload)
     selection_path.write_text(json.dumps(selection_payload, indent=2), encoding="utf-8")
     return selection_payload
 
@@ -339,7 +336,6 @@ def save_temporal_sequence_figure(
         "frame_indices": frame_indices,
         "selection_rule": "best residual-refinement sample by sample-level MSE gain over the baseline",
     }
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 
@@ -404,7 +400,6 @@ def save_uncertainty_alignment_figure(
         "frame_index": frame_index,
         "selection_rule": "maximum error-uncertainty correlation over samples, then over frames",
     }
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 
@@ -540,7 +535,6 @@ def save_sparse_uv_killer_figure(
         "frame_index": frame_index,
         "selection_rule": "maximum residual-refinement gain over baseline_data_consistent by sample MSE, then by frame MSE",
     }
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 
@@ -611,7 +605,6 @@ def save_realism_bridge_figure(
         "frame_index": frame_index,
         "selection_rule": "maximum residual-refinement gain over baseline_learned by sample MSE, then by frame MSE",
     }
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 

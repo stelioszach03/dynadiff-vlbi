@@ -1,0 +1,14 @@
+{
+  "sample_index": 24,
+  "frame_index": 4,
+  "selection_rule": "top-quartile hard sample by ccrr heldout_visibility_rmse, then max emc gain",
+  "reference_key": "ccrr",
+  "candidate_key": "emc",
+  "metric_key": "heldout_visibility_rmse",
+  "sample_level_gain": 0.01779317855834961,
+  "reference_value": 0.17706391215324402,
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_sparse_uv_protocol/predictions/support_20.npz",
+  "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_sparse_uv_protocol/logs/per_sample_support_20.csv",
+  "support_fraction_tag": "20",
+  "condition_title": "Sparse-uv"
+}

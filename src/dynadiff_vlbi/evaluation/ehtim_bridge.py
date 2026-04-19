@@ -15,7 +15,7 @@ from dynadiff_vlbi.physics.classical_reconstruction import dirty_image_reconstru
 class EHTIMBridgeConfig:
     """One frozen, benchmark-facing eht-imaging bridge configuration."""
 
-    image_size: int = 64
+    image_size: int = 32
     fov: float = 1.0
     bw_hz: float = 4.0e9
     data_term_vis_weight: float = 300.0

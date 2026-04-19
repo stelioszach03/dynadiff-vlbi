@@ -13,8 +13,6 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[3]
-
 
 METRIC_SPECS: dict[str, tuple[str, str]] = {
     "mse": ("MSE", "lower"),
@@ -61,30 +59,6 @@ def save_json(path: str | Path, payload: dict[str, Any]) -> None:
     resolved = Path(path)
     resolved.parent.mkdir(parents=True, exist_ok=True)
     resolved.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
-def repo_relative_path(path: str | Path) -> str:
-    """Return a stable repo-relative POSIX path when possible."""
-
-    resolved = Path(path)
-    if not resolved.is_absolute():
-        return resolved.as_posix()
-    try:
-        return resolved.resolve().relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
-
-
-def relativize_payload_paths(payload: Any) -> Any:
-    """Recursively convert repo-local absolute paths inside a payload."""
-
-    if isinstance(payload, dict):
-        return {key: relativize_payload_paths(value) for key, value in payload.items()}
-    if isinstance(payload, list):
-        return [relativize_payload_paths(value) for value in payload]
-    if isinstance(payload, str) and payload.startswith("/"):
-        return repo_relative_path(payload)
-    return payload
 
 
 def format_value(value: float) -> str:

@@ -23,30 +23,6 @@ def load_dataset_arrays(dataset_dir: str | Path, split: str = "test") -> dict[st
         return {key: payload[key] for key in payload.files}
 
 
-def _dataset_sample_count(dataset: dict[str, np.ndarray]) -> int:
-    """Infer the number of samples from either synthetic or public-EHT datasets."""
-
-    for key in ("ground_truth", "vis_real", "dirty", "sample_id"):
-        value = dataset.get(key)
-        if value is not None:
-            return int(value.shape[0])
-    raise KeyError("Dataset is missing all supported sample-count keys: ground_truth, vis_real, dirty, sample_id.")
-
-
-def _sample_specific_geometry(
-    geometry: np.ndarray,
-    *,
-    sample_index: int,
-    sample_count: int,
-    measurement_ndim: int,
-) -> np.ndarray:
-    """Return sample-specific geometry when public datasets carry a leading sample axis."""
-
-    if geometry.ndim == measurement_ndim + 1 and geometry.shape[0] == sample_count:
-        return geometry[sample_index]
-    return geometry
-
-
 def export_split_manifests(
     *,
     config: ExperimentConfig,
@@ -76,8 +52,7 @@ def export_split_manifests(
         "strategy_description": HOLDOUT_STRATEGY_DESCRIPTIONS.get(config.holdout.strategy, ""),
         "support_fractions": {},
     }
-    sample_indices = np.arange(_dataset_sample_count(dataset), dtype=np.int64)
-    sample_count = int(sample_indices.shape[0])
+    sample_indices = np.arange(dataset["ground_truth"].shape[0], dtype=np.int64)
 
     for support_fraction in config.holdout.eval_support_fractions:
         fraction_tag = f"{int(round(100.0 * float(support_fraction))):02d}"
@@ -90,23 +65,11 @@ def export_split_manifests(
             measurements = (
                 dataset["vis_real"][sample_index] + 1j * dataset["vis_imag"][sample_index]
             ).astype(np.complex64)
-            sample_frame_uv_indices = _sample_specific_geometry(
-                frame_uv_indices,
-                sample_index=sample_index,
-                sample_count=sample_count,
-                measurement_ndim=measurements.ndim,
-            )
-            sample_frame_uv_coords = _sample_specific_geometry(
-                frame_uv_coords,
-                sample_index=sample_index,
-                sample_count=sample_count,
-                measurement_ndim=measurements.ndim,
-            )
             split = build_structured_holdout_split(
                 measurements=measurements,
                 observed_mask=dataset["mask"][sample_index].astype(np.float32),
-                frame_uv_indices=sample_frame_uv_indices,
-                frame_uv_coords=sample_frame_uv_coords,
+                frame_uv_indices=frame_uv_indices,
+                frame_uv_coords=frame_uv_coords,
                 baseline_pairs=baseline_pairs,
                 station_positions=station_positions,
                 base_seed=config.project.seed,

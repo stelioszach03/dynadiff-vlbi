@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Evaluation-only dataset output directory.",
     )
-    parser.add_argument("--image-size", type=int, default=64)
+    parser.add_argument("--image-size", type=int, default=32)
     parser.add_argument("--sequence-length", type=int, default=8)
     return parser.parse_args()
 

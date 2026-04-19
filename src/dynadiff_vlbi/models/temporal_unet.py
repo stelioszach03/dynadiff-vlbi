@@ -30,32 +30,71 @@ class ConvBlock3D(nn.Module):
 
 
 class TemporalUNet3D(BaseReconstructionModel):
-    """Compact temporal U-Net operating on `[B, 1, T, H, W]` inputs."""
+    """Compact temporal U-Net operating on `[B, 1, T, H, W]` inputs.
+
+    Supports variable depth via ``config.num_levels`` (default 2 for backward
+    compatibility with 32x32).  For 128x128 images use ``num_levels=3``.
+    """
 
     def __init__(self, config: ModelConfig) -> None:
         super().__init__()
         base = config.base_channels
-        self.enc1 = ConvBlock3D(config.in_channels, base, dropout=0.0)
-        self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2))
-        self.enc2 = ConvBlock3D(base, base * 2, dropout=0.0)
-        self.pool2 = nn.MaxPool3d(kernel_size=(1, 2, 2))
-        self.bottleneck = ConvBlock3D(base * 2, base * 4, dropout=config.dropout)
-        self.up2 = nn.ConvTranspose3d(base * 4, base * 2, kernel_size=(1, 2, 2), stride=(1, 2, 2))
-        self.dec2 = ConvBlock3D(base * 4, base * 2, dropout=config.dropout)
-        self.up1 = nn.ConvTranspose3d(base * 2, base, kernel_size=(1, 2, 2), stride=(1, 2, 2))
-        self.dec1 = ConvBlock3D(base * 2, base, dropout=config.dropout)
+        num_levels = getattr(config, "num_levels", 2)
+
+        # Build encoder / decoder lists
+        self.encoders = nn.ModuleList()
+        self.pools = nn.ModuleList()
+        self.decoders = nn.ModuleList()
+        self.ups = nn.ModuleList()
+
+        in_ch = config.in_channels
+        ch = base
+        for level in range(num_levels):
+            drop = 0.0 if level < num_levels - 1 else config.dropout
+            self.encoders.append(ConvBlock3D(in_ch, ch, dropout=0.0))
+            self.pools.append(nn.MaxPool3d(kernel_size=(1, 2, 2)))
+            in_ch = ch
+            ch = ch * 2
+
+        # Bottleneck
+        self.bottleneck = ConvBlock3D(in_ch, ch, dropout=config.dropout)
+
+        # Decoder path (reverse order)
+        for level in reversed(range(num_levels)):
+            dec_in = ch
+            dec_out = ch // 2
+            self.ups.append(
+                nn.ConvTranspose3d(dec_in, dec_out, kernel_size=(1, 2, 2), stride=(1, 2, 2))
+            )
+            # After concat with skip: dec_out + encoder_channels
+            enc_ch = base * (2 ** level) if level > 0 else base
+            drop = config.dropout if level > 0 else config.dropout
+            self.decoders.append(ConvBlock3D(dec_out + enc_ch, dec_out, dropout=drop))
+            ch = dec_out
+
         self.out_proj = nn.Conv3d(base, config.out_channels, kernel_size=1)
+        self.num_levels = num_levels
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.ndim == 4:
             x = x.unsqueeze(1)
         residual = x
-        enc1 = self.enc1(x)
-        enc2 = self.enc2(self.pool1(enc1))
-        bottleneck = self.bottleneck(self.pool2(enc2))
-        up2 = self.up2(bottleneck)
-        dec2 = self.dec2(torch.cat([up2, enc2], dim=1))
-        up1 = self.up1(dec2)
-        dec1 = self.dec1(torch.cat([up1, enc1], dim=1))
-        correction = self.out_proj(dec1)
+
+        # Encoder
+        skips = []
+        h = x
+        for encoder, pool in zip(self.encoders, self.pools):
+            h = encoder(h)
+            skips.append(h)
+            h = pool(h)
+
+        # Bottleneck
+        h = self.bottleneck(h)
+
+        # Decoder
+        for up, decoder, skip in zip(self.ups, self.decoders, reversed(skips)):
+            h = up(h)
+            h = decoder(torch.cat([h, skip], dim=1))
+
+        correction = self.out_proj(h)
         return torch.clamp(residual + correction, 0.0, 1.0)

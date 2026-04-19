@@ -1,40 +1,52 @@
 # Expected Outputs
 
-A successful benchmark-plus-public-suite paper run should produce the following review-facing outputs.
+A successful benchmark release run should produce the following top-level files and directories.
 
-## Synthetic benchmark release
+## Release manifest root
 
-- [`../outputs/emc_benchmark_release/benchmark_output_manifest.json`](../outputs/emc_benchmark_release/benchmark_output_manifest.json)
-- `../outputs/emc_benchmark_release/config_manifests/`
-- `../outputs/emc_benchmark_release/split_manifests/`
-- [`../outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.md`](../outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.md)
-- [`../outputs/emc_benchmark_artifacts/tables/emc_challenge_inspired_realism.md`](../outputs/emc_benchmark_artifacts/tables/emc_challenge_inspired_realism.md)
-- `../outputs/emc_benchmark_artifacts/summaries/emc_benchmark_artifact_manifest.json`
+- [`outputs/emc_benchmark_release/benchmark_output_manifest.json`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_release/benchmark_output_manifest.json)
+- `outputs/emc_benchmark_release/config_manifests/`
+- `outputs/emc_benchmark_release/split_manifests/`
 
-## Public-EHT suite
+## Config manifests
 
-- [`../outputs/public_eht_suite/suite_manifest.json`](../outputs/public_eht_suite/suite_manifest.json)
-- [`../outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md)
-- [`../outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md)
-- [`../outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md)
-- [`../outputs/public_eht_suite_artifacts/tables/emc_public_eht_day_band.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_day_band.md)
-- `../outputs/public_eht_suite_artifacts/summaries/public_eht_artifact_manifest.json`
+- `outputs/emc_benchmark_release/config_manifests/baseline_tracks.json`
+- `outputs/emc_benchmark_release/config_manifests/scan_segments.json`
+- `outputs/emc_benchmark_release/config_manifests/station_dropout.json`
+- `outputs/emc_benchmark_release/config_manifests/challenge_inspired_realism.json`
+
+## Split manifests
+
+Each family directory should contain:
+
+- `split_manifest.json`
+- `support_80_split_manifest.npz`
+- `support_60_split_manifest.npz`
+- `support_40_split_manifest.npz`
+- `support_20_split_manifest.npz`
+
+## Benchmark artifact outputs
+
+- `outputs/emc_benchmark_artifacts/tables/emc_benchmark_long.csv`
+- `outputs/emc_benchmark_artifacts/tables/emc_benchmark_matrix.md`
+- `outputs/emc_benchmark_artifacts/tables/emc_challenge_inspired_realism.md`
+- [`outputs/emc_benchmark_artifacts/leaderboard_template.csv`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_artifacts/leaderboard_template.csv)
+- `outputs/emc_benchmark_artifacts/summaries/emc_benchmark_artifact_manifest.json`
 
 ## Paper figures
 
-- `../paper/figures/fig01_emc_schematic.png`
-- `../paper/figures/fig02_emc_benchmark_support_curve.png`
-- `../paper/figures/fig06_emc_public_eht_suite.png`
-- `../paper/figures/fig07_emc_public_transfer_gap.png`
-- `../paper/figures/fig08_emc_synthetic_qualitative.png`
-- `../paper/figures/fig09_public_eht_qualitative.png`
+- `paper/figures/fig02_emc_benchmark_support_curve.png`
+- `paper/figures/fig03_emc_challenge_inspired_realism.png`
+- `paper/figures/fig04_emc_benchmark_representative.png`
+- `paper/figures/fig05_emc_realism_hard_example.png`
 
-## Manuscript bundle
+## Protocol run outputs
 
-- [`../paper/manuscript.md`](../paper/manuscript.md)
-- [`../paper/manuscript.pdf`](../paper/manuscript.pdf)
+Each protocol run directory should contain:
 
-## Notes
-
-- The public suite is not part of the fixed synthetic benchmark release, but it is part of the review-facing paper package.
-- Real-data validation is observation-domain only.
+- `logs/emc_protocol_summary.json`
+- `logs/support_fraction_metrics.csv`
+- `predictions/support_80.npz`
+- `predictions/support_60.npz`
+- `predictions/support_40.npz`
+- `predictions/support_20.npz`

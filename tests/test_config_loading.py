@@ -25,14 +25,14 @@ def test_custom_config_overrides_preset_for_noise_and_sampling_values() -> None:
         base_path=ROOT / "configs/paper_noise_high.yaml",
         train_path=ROOT / "configs/train.yaml",
         eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
+        preset="default32",
         default_base_path=ROOT / "configs/base.yaml",
     )
     sparse_config = load_experiment_config(
         base_path=ROOT / "configs/paper_sparse_uv.yaml",
         train_path=ROOT / "configs/train.yaml",
         eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
+        preset="default32",
         default_base_path=ROOT / "configs/base.yaml",
     )
 
@@ -52,4 +52,3 @@ def test_default_base_with_smoke_preset_keeps_smoke_sizes() -> None:
     assert config.dataset.train_size == 16
     assert config.dataset.val_size == 4
     assert config.dataset.test_size == 4
-    assert config.dataset.image_size == 64

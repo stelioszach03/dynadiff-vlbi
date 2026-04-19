@@ -1,0 +1,11 @@
+{
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/compare_default32_residual_refine_fair8/predictions/test_predictions.npz",
+  "sample_index": 22,
+  "frame_indices": [
+    0,
+    2,
+    4,
+    6
+  ],
+  "selection_rule": "best residual-refinement sample by sample-level MSE gain over the baseline"
+}

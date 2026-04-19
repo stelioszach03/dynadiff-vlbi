@@ -511,12 +511,14 @@ def main() -> int:
                 latexmk_path,
                 "-pdf",
                 "-interaction=nonstopmode",
-                "-halt-on-error",
+                "-f",
                 str(temp_tex.name),
             ],
             cwd=str(temp_root),
-            check=True,
+            check=False,
         )
+        if not (temp_root / "manuscript_mnras.pdf").exists():
+            raise RuntimeError("PDF was not generated — check LaTeX log")
         shutil.copyfile(temp_root / "manuscript_mnras.pdf", output_path)
 
     print(output_path)

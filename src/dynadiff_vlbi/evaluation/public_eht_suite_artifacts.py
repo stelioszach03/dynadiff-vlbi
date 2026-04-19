@@ -14,14 +14,7 @@ from matplotlib.lines import Line2D
 import numpy as np
 
 from dynadiff_vlbi.evaluation.ccrr_artifacts import paired_bootstrap_stats
-from dynadiff_vlbi.evaluation.paper_artifacts import (
-    format_value,
-    relativize_payload_paths,
-    repo_relative_path,
-    save_json,
-    write_csv,
-    write_markdown_table,
-)
+from dynadiff_vlbi.evaluation.paper_artifacts import format_value, save_json, write_csv, write_markdown_table
 from dynadiff_vlbi.evaluation.paper_visuals import IMAGE_CMAP, load_predictions
 
 
@@ -34,8 +27,6 @@ MODEL_LABELS: dict[str, str] = {
     "residual_refinement": "Residual Refinement",
     "ccrr": "CCRR",
     "emc": "EMC",
-    "emc_tto": "EMC-TTO",
-    "dps": "DPS",
 }
 
 MODEL_COLORS: dict[str, str] = {
@@ -46,8 +37,6 @@ MODEL_COLORS: dict[str, str] = {
     "residual_refinement": "#2563eb",
     "ccrr": "#7c3aed",
     "emc": "#dc2626",
-    "emc_tto": "#dc2626",
-    "dps": "#f59e0b",
 }
 
 PLOT_MODEL_ORDER = [
@@ -58,8 +47,6 @@ PLOT_MODEL_ORDER = [
     "residual_refinement",
     "ccrr",
     "emc",
-    "emc_tto",
-    "dps",
 ]
 
 METRIC_DIRECTIONS = {
@@ -112,13 +99,9 @@ def _descending_support_tags(summary: dict[str, Any]) -> list[str]:
 
 
 def _model_metrics(summary: dict[str, Any], support_tag: str, model_key: str) -> dict[str, float]:
-    models = summary["support_fractions"][support_tag]["models"]
-    if model_key not in models:
-        reference_metrics = next(iter(models.values()))
-        return {key: float("nan") for key in reference_metrics}
     return {
         key: _safe_float(value)
-        for key, value in models[model_key].items()
+        for key, value in summary["support_fractions"][support_tag]["models"][model_key].items()
     }
 
 
@@ -247,8 +230,8 @@ def select_public_qualitative_example(
         "tie_break_order": [f"{target} {year}" for target, year in preferred_order],
         "tie_break_decision": f"selected {_track_label(chosen_summary)} by minimum release-median distance to pooled public median; ties broken by the documented release order",
         "selection_rule": selection_rule,
-        "prediction_path": repo_relative_path(chosen_spec.prediction_path(support_fraction_tag)),
-        "per_sample_csv": repo_relative_path(chosen_spec.per_sample_path(support_fraction_tag)),
+        "prediction_path": str(chosen_spec.prediction_path(support_fraction_tag)),
+        "per_sample_csv": str(chosen_spec.per_sample_path(support_fraction_tag)),
     }
 
 
@@ -281,12 +264,6 @@ def build_public_matrix_rows(summaries: list[dict[str, Any]]) -> list[dict[str, 
                     "best_observed_model_label": MODEL_LABELS[best_observed_key],
                     "best_observed_visibility_rmse": _safe_float(models[best_observed_key]["observed_visibility_rmse"]),
                     "emc_heldout_visibility_rmse": _safe_float(models["emc"]["heldout_visibility_rmse"]),
-                    "emc_tto_heldout_visibility_rmse": _safe_float(
-                        models.get("emc_tto", {}).get("heldout_visibility_rmse", float("nan"))
-                    ),
-                    "dps_heldout_visibility_rmse": _safe_float(
-                        models.get("dps", {}).get("heldout_visibility_rmse", float("nan"))
-                    ),
                     "ccrr_heldout_visibility_rmse": _safe_float(models["ccrr"]["heldout_visibility_rmse"]),
                     "baseline_heldout_visibility_rmse": _safe_float(models["baseline_learned"]["heldout_visibility_rmse"]),
                     "residual_heldout_visibility_rmse": _safe_float(models["residual_refinement"]["heldout_visibility_rmse"]),
@@ -295,8 +272,6 @@ def build_public_matrix_rows(summaries: list[dict[str, Any]]) -> list[dict[str, 
                     "dirty_heldout_visibility_rmse": _safe_float(models["dirty"]["heldout_visibility_rmse"]),
                     "emc_observed_visibility_rmse": _safe_float(models["emc"]["observed_visibility_rmse"]),
                     "emc_heldout_reduced_chi2": _safe_float(models["emc"]["heldout_reduced_chi2"]),
-                    "emc_miw": float("nan"),
-                    "emc_tto_miw": float("nan"),
                     "days_present": ",".join(str(value) for value in support_payload.get("days_present", [])),
                     "bands_present": ",".join(str(value) for value in support_payload.get("bands_present", [])),
                 }
@@ -314,10 +289,6 @@ def write_public_matrix_table(path: str | Path, rows: list[dict[str, Any]]) -> N
             str(row["best_heldout_model_label"]),
             _fmt(float(row["best_heldout_visibility_rmse"])),
             _fmt(float(row["emc_heldout_visibility_rmse"])),
-            _fmt(float(row["emc_tto_heldout_visibility_rmse"])),
-            _fmt(float(row.get("dps_heldout_visibility_rmse", float("nan")))),
-            _fmt(float(row.get("emc_miw", float("nan")))),
-            _fmt(float(row.get("emc_tto_miw", float("nan")))),
             _fmt(float(row["ccrr_heldout_visibility_rmse"])),
             _fmt(float(row["baseline_heldout_visibility_rmse"])),
             _fmt(float(row["ehtim_bridge_heldout_visibility_rmse"])),
@@ -336,10 +307,6 @@ def write_public_matrix_table(path: str | Path, rows: list[dict[str, Any]]) -> N
             "Best held-out model",
             "Best held-out VisRMSE",
             "EMC",
-            "EMC-TTO",
-            "DPS",
-            "EMC MIW",
-            "EMC-TTO MIW",
             "CCRR",
             "Baseline",
             "eht-imaging",
@@ -385,8 +352,6 @@ def build_sensitivity_rows(
                     "family": family_key,
                     "family_label": "Baseline-track blocks" if family_key == "baseline_track_blocks" else "Station dropout",
                     "mean_emc_heldout_visibility_rmse": _mean_support_metric(summary, "emc", "heldout_visibility_rmse"),
-                    "mean_emc_tto_heldout_visibility_rmse": _mean_support_metric(summary, "emc_tto", "heldout_visibility_rmse"),
-                    "mean_dps_heldout_visibility_rmse": _mean_support_metric(summary, "dps", "heldout_visibility_rmse"),
                     "mean_ccrr_heldout_visibility_rmse": _mean_support_metric(summary, "ccrr", "heldout_visibility_rmse"),
                     "mean_baseline_heldout_visibility_rmse": _mean_support_metric(summary, "baseline_learned", "heldout_visibility_rmse"),
                     "mean_ehtim_bridge_heldout_visibility_rmse": _mean_support_metric(summary, "ehtim_bridge", "heldout_visibility_rmse"),
@@ -405,8 +370,6 @@ def write_sensitivity_table(path: str | Path, rows: list[dict[str, Any]]) -> Non
             str(row["track_label"]),
             str(row["family_label"]),
             _fmt(float(row["mean_emc_heldout_visibility_rmse"])),
-            _fmt(float(row["mean_emc_tto_heldout_visibility_rmse"])),
-            _fmt(float(row.get("mean_dps_heldout_visibility_rmse", float("nan")))),
             _fmt(float(row["mean_ccrr_heldout_visibility_rmse"])),
             _fmt(float(row["mean_baseline_heldout_visibility_rmse"])),
             _fmt(float(row["mean_ehtim_bridge_heldout_visibility_rmse"])),
@@ -422,8 +385,6 @@ def write_sensitivity_table(path: str | Path, rows: list[dict[str, Any]]) -> Non
             "Track",
             "Family",
             "Mean EMC",
-            "Mean EMC-TTO",
-            "Mean DPS",
             "Mean CCRR",
             "Mean baseline",
             "Mean eht-imaging",
@@ -456,10 +417,6 @@ def build_release_robustness_rows(
             [_model_metrics(baseline_summary, tag, "emc")["heldout_visibility_rmse"] for tag in baseline_support_tags],
             dtype=np.float64,
         )
-        emc_tto_baseline_values = np.asarray(
-            [_model_metrics(baseline_summary, tag, "emc_tto")["heldout_visibility_rmse"] for tag in baseline_support_tags],
-            dtype=np.float64,
-        )
         ehtim_baseline_values = np.asarray(
             [_model_metrics(baseline_summary, tag, "ehtim_bridge")["heldout_visibility_rmse"] for tag in baseline_support_tags],
             dtype=np.float64,
@@ -478,11 +435,7 @@ def build_release_robustness_rows(
             "bands_present": ",".join(str(value) for value in baseline_summary["support_fractions"]["80"].get("bands_present", [])),
             "mean_emc_baseline_track": float(np.nanmean(emc_baseline_values)),
             "std_emc_baseline_track": float(np.nanstd(emc_baseline_values)),
-            "mean_emc_tto_baseline_track": float(np.nanmean(emc_tto_baseline_values)),
-            "std_emc_tto_baseline_track": float(np.nanstd(emc_tto_baseline_values)),
-            "emc_tto_uplift_baseline_track": float(np.nanmean(emc_baseline_values) - np.nanmean(emc_tto_baseline_values)),
             "mean_ehtim_baseline_track": float(np.nanmean(ehtim_baseline_values)),
-            "mean_dps_baseline_track": _mean_support_metric(baseline_summary, "dps", "heldout_visibility_rmse"),
             "best_baseline_track_model": baseline_best_mean_key,
             "best_baseline_track_model_label": MODEL_LABELS[baseline_best_mean_key],
             "best_baseline_track_mean": _mean_support_metric(
@@ -498,10 +451,6 @@ def build_release_robustness_rows(
                 [_model_metrics(station_summary, tag, "emc")["heldout_visibility_rmse"] for tag in station_support_tags],
                 dtype=np.float64,
             )
-            emc_tto_station_values = np.asarray(
-                [_model_metrics(station_summary, tag, "emc_tto")["heldout_visibility_rmse"] for tag in station_support_tags],
-                dtype=np.float64,
-            )
             station_best_mean_key = min(
                 MODEL_LABELS,
                 key=lambda key: _mean_support_metric(station_summary, key, "heldout_visibility_rmse")
@@ -512,10 +461,7 @@ def build_release_robustness_rows(
                 {
                     "mean_emc_station_dropout": float(np.nanmean(emc_station_values)),
                     "std_emc_station_dropout": float(np.nanstd(emc_station_values)),
-                    "mean_emc_tto_station_dropout": float(np.nanmean(emc_tto_station_values)),
-                    "std_emc_tto_station_dropout": float(np.nanstd(emc_tto_station_values)),
                     "emc_family_gap": float(np.nanmean(emc_station_values) - np.nanmean(emc_baseline_values)),
-                    "emc_tto_family_gap": float(np.nanmean(emc_tto_station_values) - np.nanmean(emc_tto_baseline_values)),
                     "best_station_dropout_model": station_best_mean_key,
                     "best_station_dropout_model_label": MODEL_LABELS[station_best_mean_key],
                     "best_station_dropout_mean": _mean_support_metric(
@@ -537,14 +483,9 @@ def write_release_robustness_table(path: str | Path, rows: list[dict[str, Any]])
             str(row["days_present"]),
             str(row["bands_present"]),
             _fmt(float(row["mean_emc_baseline_track"])),
-            _fmt(float(row["mean_emc_tto_baseline_track"])),
-            _fmt(float(row.get("mean_dps_baseline_track", float("nan")))),
-            _fmt(float(row["emc_tto_uplift_baseline_track"])),
             _fmt(float(row["std_emc_baseline_track"])),
             _fmt(float(row.get("mean_emc_station_dropout", float("nan")))),
-            _fmt(float(row.get("mean_emc_tto_station_dropout", float("nan")))),
             _fmt(float(row.get("emc_family_gap", float("nan")))),
-            _fmt(float(row.get("emc_tto_family_gap", float("nan")))),
             _fmt(float(row["mean_ehtim_baseline_track"])),
             str(row["best_baseline_track_model_label"]),
             str(row.get("best_station_dropout_model_label", "n/a")),
@@ -559,14 +500,9 @@ def write_release_robustness_table(path: str | Path, rows: list[dict[str, Any]])
             "Days",
             "Bands",
             "Mean EMC (baseline-track)",
-            "Mean EMC-TTO (baseline-track)",
-            "Mean DPS (baseline-track)",
-            "EMC-TTO uplift",
             "Std EMC (baseline-track)",
             "Mean EMC (station-dropout)",
-            "Mean EMC-TTO (station-dropout)",
             "EMC family gap",
-            "EMC-TTO family gap",
             "Mean eht-imaging",
             "Best baseline-track model",
             "Best station-dropout model",
@@ -574,7 +510,6 @@ def write_release_robustness_table(path: str | Path, rows: list[dict[str, Any]])
         rows=markdown_rows,
         title="Public EHT Release Robustness Summary",
         notes=[
-            "EMC-TTO uplift is EMC mean minus EMC-TTO mean on held-out visibility RMSE, so positive values mean test-time optimization helps.",
             "The EMC family gap is station-dropout mean minus baseline-track mean, so positive values indicate worse EMC held-out recovery under station-structured missingness.",
             "This table is observation-domain only and is intended to summarize public-release robustness rather than to support morphology claims.",
         ],
@@ -626,22 +561,10 @@ def build_public_stats_rows(
         ("Public EHT baseline-track suite", baseline_track_paths, "emc", "ehtim_bridge", "heldout_visibility_rmse"),
         ("Public EHT baseline-track suite", baseline_track_paths, "emc", "tikhonov", "heldout_visibility_rmse"),
         ("Public EHT baseline-track suite", baseline_track_paths, "emc", "tikhonov", "heldout_reduced_chi2"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "emc", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "ccrr", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "residual_refinement", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "baseline_learned", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "ehtim_bridge", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "tikhonov", "heldout_visibility_rmse"),
-        ("Public EHT baseline-track suite", baseline_track_paths, "emc_tto", "tikhonov", "heldout_reduced_chi2"),
         ("Public EHT station-dropout suite", station_dropout_paths, "emc", "ccrr", "heldout_visibility_rmse"),
         ("Public EHT station-dropout suite", station_dropout_paths, "emc", "baseline_learned", "heldout_visibility_rmse"),
         ("Public EHT station-dropout suite", station_dropout_paths, "emc", "ehtim_bridge", "heldout_visibility_rmse"),
         ("Public EHT station-dropout suite", station_dropout_paths, "emc", "tikhonov", "heldout_visibility_rmse"),
-        ("Public EHT station-dropout suite", station_dropout_paths, "emc_tto", "emc", "heldout_visibility_rmse"),
-        ("Public EHT station-dropout suite", station_dropout_paths, "emc_tto", "ccrr", "heldout_visibility_rmse"),
-        ("Public EHT station-dropout suite", station_dropout_paths, "emc_tto", "baseline_learned", "heldout_visibility_rmse"),
-        ("Public EHT station-dropout suite", station_dropout_paths, "emc_tto", "ehtim_bridge", "heldout_visibility_rmse"),
-        ("Public EHT station-dropout suite", station_dropout_paths, "emc_tto", "tikhonov", "heldout_visibility_rmse"),
     ]
     rows: list[dict[str, Any]] = []
     for cohort, paths, candidate_key, reference_key, metric_key in specs:
@@ -665,49 +588,6 @@ def build_public_stats_rows(
                 **stats,
             }
         )
-    return rows
-
-
-def build_release_gap_rows(track_specs: list[PublicTrackSpec]) -> list[dict[str, Any]]:
-    """Build release-level paired-gap rows for the main public baseline-track suite."""
-
-    comparisons = [
-        ("emc", "baseline_learned", "heldout_visibility_rmse"),
-        ("emc", "residual_refinement", "heldout_visibility_rmse"),
-        ("emc", "ccrr", "heldout_visibility_rmse"),
-        ("emc_tto", "emc", "heldout_visibility_rmse"),
-        ("emc_tto", "baseline_learned", "heldout_visibility_rmse"),
-        ("emc_tto", "residual_refinement", "heldout_visibility_rmse"),
-        ("emc_tto", "ccrr", "heldout_visibility_rmse"),
-    ]
-    rows: list[dict[str, Any]] = []
-    for spec in track_specs:
-        summary = load_json(spec.summary_path)
-        track_label = _track_label(summary)
-        for candidate_key, reference_key, metric_key in comparisons:
-            candidate, reference = _collect_paired_values(
-                per_sample_paths=spec.per_sample_paths,
-                candidate_key=candidate_key,
-                reference_key=reference_key,
-                metric_key=metric_key,
-            )
-            if candidate.size == 0:
-                continue
-            stats = paired_bootstrap_stats(candidate, reference, direction=METRIC_DIRECTIONS[metric_key])
-            rows.append(
-                {
-                    "track_label": track_label,
-                    "release_code": summary["release_code"],
-                    "target": summary["target"],
-                    "campaign_year": summary["campaign_year"],
-                    "comparison": f"{MODEL_LABELS[candidate_key]} vs {MODEL_LABELS[reference_key]}",
-                    "metric": metric_key,
-                    "n_pairs": int(candidate.size),
-                    "candidate_mean": float(np.mean(candidate)),
-                    "reference_mean": float(np.mean(reference)),
-                    **stats,
-                }
-            )
     return rows
 
 
@@ -750,43 +630,6 @@ def write_public_stats_table(path: str | Path, rows: list[dict[str, Any]]) -> No
     )
 
 
-def write_release_gap_table(path: str | Path, rows: list[dict[str, Any]]) -> None:
-    markdown_rows = [
-        [
-            str(row["track_label"]),
-            str(row["comparison"]),
-            str(row["n_pairs"]),
-            _fmt(float(row["candidate_mean"])),
-            _fmt(float(row["reference_mean"])),
-            _fmt(float(row["mean_delta"])),
-            f"[{_fmt(float(row['ci_low']))}, {_fmt(float(row['ci_high']))}]",
-            _fmt(float(row["win_rate"])),
-            _fmt(float(row["p_value"])),
-        ]
-        for row in rows
-    ]
-    write_markdown_table(
-        path,
-        headers=[
-            "Track",
-            "Comparison",
-            "Pairs",
-            "EMC mean",
-            "Reference mean",
-            "Mean delta",
-            "95% CI",
-            "Win rate",
-            "p-value",
-        ],
-        rows=markdown_rows,
-        title="Public EHT Release-Level Gap Summary",
-        notes=[
-            "Positive direction-aware mean deltas mean EMC is better under held-out visibility RMSE.",
-            "These rows expose release-level heterogeneity rather than reducing the public suite to one pooled number.",
-        ],
-    )
-
-
 def build_day_band_rows(per_sample_paths: list[Path]) -> list[dict[str, Any]]:
     """Summarize public real-data behaviour by day and band from the same per-sample outputs."""
 
@@ -819,9 +662,6 @@ def build_day_band_rows(per_sample_paths: list[Path]) -> list[dict[str, Any]]:
                     "day_of_year": day,
                     "band": band,
                     "emc_mean_heldout_visibility_rmse": float(np.nanmean(model_values["emc"])),
-                    "emc_tto_mean_heldout_visibility_rmse": float(
-                        np.nanmean(model_values.get("emc_tto", [float("nan")]))
-                    ),
                     "best_model": best_model,
                     "best_model_label": MODEL_LABELS.get(best_model, best_model),
                     "best_mean_heldout_visibility_rmse": float(
@@ -849,7 +689,6 @@ def write_day_band_table(path: str | Path, rows: list[dict[str, Any]]) -> None:
             str(row["day_of_year"]),
             str(row["band"]),
             _fmt(float(row["emc_mean_heldout_visibility_rmse"])),
-            _fmt(float(row["emc_tto_mean_heldout_visibility_rmse"])),
             str(row["best_model_label"]),
             _fmt(float(row["best_mean_heldout_visibility_rmse"])),
         ]
@@ -857,7 +696,7 @@ def write_day_band_table(path: str | Path, rows: list[dict[str, Any]]) -> None:
     ]
     write_markdown_table(
         path,
-        headers=["Track", "Support (%)", "Day", "Band", "Mean EMC", "Mean EMC-TTO", "Best model", "Best mean VisRMSE"],
+        headers=["Track", "Support (%)", "Day", "Band", "Mean EMC", "Best model", "Best mean VisRMSE"],
         rows=markdown_rows,
         title="Public EHT Day/Band Stratified Summary",
         notes=[
@@ -947,7 +786,6 @@ def save_public_qualitative_figure(
         **selection,
         "figure_layout": [label for _, label in panel_specs] + ["Support / held-out mask"],
     }
-    payload = relativize_payload_paths(payload)
     Path(selection_manifest).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
 
@@ -970,8 +808,6 @@ def save_public_suite_figure(
 
     for axis, summary in zip(axes_array, summaries):
         for model_key in PLOT_MODEL_ORDER:
-            if model_key not in summary["support_fractions"]["80"]["models"]:
-                continue
             heldout_values = [_model_metrics(summary, str(tag), model_key)["heldout_visibility_rmse"] for tag in x_values]
             axis.plot(
                 x_values,
@@ -979,7 +815,6 @@ def save_public_suite_figure(
                 marker="o",
                 linewidth=2.0,
                 color=MODEL_COLORS[model_key],
-                linestyle="--" if model_key == "emc_tto" else "-",
                 label=MODEL_LABELS[model_key],
             )
         axis.set_title(_track_label(summary), fontsize=12)
@@ -992,17 +827,8 @@ def save_public_suite_figure(
         axis.axis("off")
 
     legend_handles = [
-        Line2D(
-            [0],
-            [0],
-            color=MODEL_COLORS[key],
-            lw=2.0,
-            marker="o",
-            linestyle="--" if key == "emc_tto" else "-",
-            label=MODEL_LABELS[key],
-        )
+        Line2D([0], [0], color=MODEL_COLORS[key], lw=2.0, marker="o", label=MODEL_LABELS[key])
         for key in PLOT_MODEL_ORDER
-        if any(key in summary["support_fractions"]["80"]["models"] for summary in summaries)
     ]
     fig.legend(
         handles=legend_handles,
@@ -1025,11 +851,10 @@ def save_public_suite_figure(
 def save_transfer_gap_figure(
     *,
     stats_rows: list[dict[str, Any]],
-    release_gap_rows: list[dict[str, Any]],
     output_png: str | Path,
     output_svg: str | Path,
 ) -> None:
-    """Save a synthetic-versus-public transfer-gap figure with release-level heterogeneity."""
+    """Save a compact synthetic-versus-public transfer-gap figure."""
 
     comparisons = [
         "EMC vs Baseline 3D U-Net",
@@ -1041,64 +866,28 @@ def save_transfer_gap_figure(
         for row in stats_rows
         if row["cohort"] == "Synthetic benchmark breadth" and row["metric"] == "heldout_visibility_rmse"
     }
-    pooled_public = {
+    public = {
         row["comparison"]: row
         for row in stats_rows
         if row["cohort"] == "Public EHT baseline-track suite" and row["metric"] == "heldout_visibility_rmse"
     }
-    release_labels = [
-        "M87 2017 (2019-D01-01)",
-        "M87 2018 (2024-D01-01)",
-        "3C279 2017 (2020-D01-01)",
-        "CenA 2017 (2021-D03-01)",
-    ]
-    release_colors = {
-        "M87 2017 (2019-D01-01)": "#b45309",
-        "M87 2018 (2024-D01-01)": "#2563eb",
-        "3C279 2017 (2020-D01-01)": "#7c3aed",
-        "CenA 2017 (2021-D03-01)": "#059669",
-    }
+
     x = np.arange(len(comparisons), dtype=np.float64)
     width = 0.34
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.8), gridspec_kw={"width_ratios": [1.0, 1.3]})
+    fig, ax = plt.subplots(figsize=(8.8, 4.6))
     fig.patch.set_facecolor("white")
     synthetic_values = [synthetic.get(comp, {}).get("mean_delta", float("nan")) for comp in comparisons]
-    pooled_values = [pooled_public.get(comp, {}).get("mean_delta", float("nan")) for comp in comparisons]
-
-    left = axes[0]
-    left.bar(x - width / 2.0, synthetic_values, width=width, color="#dc2626", label="Synthetic breadth")
-    left.bar(x + width / 2.0, pooled_values, width=width, color="#2563eb", label="Pooled public baseline-track")
-    left.axhline(0.0, color="#111827", linewidth=1.0, alpha=0.7)
-    left.set_xticks(x)
-    left.set_xticklabels(["vs Baseline", "vs Residual", "vs CCRR"])
-    left.set_ylabel("Direction-aware mean delta\n(positive means EMC is better)", fontsize=10)
-    left.set_title("Pooled synthetic versus pooled public", fontsize=12)
-    left.grid(axis="y", alpha=0.22)
-    left.legend(frameon=False, fontsize=8)
-
-    right = axes[1]
-    right.axhline(0.0, color="#111827", linewidth=1.0, alpha=0.7)
-    offsets = np.linspace(-0.18, 0.18, len(release_labels))
-    release_lookup = {(row["track_label"], row["comparison"]): row for row in release_gap_rows}
-    for offset, track_label in zip(offsets, release_labels):
-        values = [release_lookup.get((track_label, comp), {}).get("mean_delta", float("nan")) for comp in comparisons]
-        right.scatter(
-            x + offset,
-            values,
-            s=42,
-            color=release_colors[track_label],
-            label=track_label,
-            zorder=3,
-        )
-    right.scatter(x, pooled_values, s=64, marker="D", color="#111827", label="Pooled public", zorder=4)
-    right.set_xticks(x)
-    right.set_xticklabels(["vs Baseline", "vs Residual", "vs CCRR"])
-    right.set_title("Public release-level heterogeneity", fontsize=12)
-    right.grid(axis="y", alpha=0.22)
-    right.legend(frameon=False, fontsize=7, loc="best")
-
-    fig.suptitle("Synthetic-to-public transfer gap on held-out visibility RMSE", fontsize=13)
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
+    public_values = [public.get(comp, {}).get("mean_delta", float("nan")) for comp in comparisons]
+    ax.bar(x - width / 2.0, synthetic_values, width=width, color="#dc2626", label="Synthetic breadth")
+    ax.bar(x + width / 2.0, public_values, width=width, color="#2563eb", label="Public EHT baseline-track")
+    ax.axhline(0.0, color="#111827", linewidth=1.0, alpha=0.7)
+    ax.set_xticks(x)
+    ax.set_xticklabels(["vs Baseline", "vs Residual", "vs CCRR"])
+    ax.set_ylabel("Direction-aware mean delta\n(positive means EMC is better)", fontsize=10)
+    ax.set_title("Synthetic-to-public transfer gap on held-out visibility RMSE", fontsize=13)
+    ax.grid(axis="y", alpha=0.22)
+    ax.legend(frameon=False, fontsize=9)
+    fig.tight_layout()
 
     output_png = Path(output_png)
     output_png.parent.mkdir(parents=True, exist_ok=True)
@@ -1113,27 +902,22 @@ def build_claim_to_evidence_rows(
     sensitivity_path: Path,
     stats_path: Path,
     day_band_path: Path,
-    release_gap_path: Path,
 ) -> list[dict[str, str]]:
     return [
         {
             "claim": "The public-EHT benchmark question remains meaningful across multiple official releases and targets, even when image-domain ground truth is unavailable.",
-            "evidence": repo_relative_path(public_matrix_path),
+            "evidence": str(public_matrix_path.resolve()),
         },
         {
             "claim": "Synthetic winners do not transfer directly to public EHT measurement products, and the transfer gap is strongest on the main held-out visibility metric.",
-            "evidence": repo_relative_path(stats_path),
-        },
-        {
-            "claim": "The public transfer picture is heterogeneous across releases rather than explained by one pooled real-data number alone.",
-            "evidence": repo_relative_path(release_gap_path),
+            "evidence": str(stats_path.resolve()),
         },
         {
             "claim": "The earned-consistency conclusions are not tied to one structured missingness family, although robustness on public data is partial rather than universal.",
-            "evidence": repo_relative_path(sensitivity_path),
+            "evidence": str(sensitivity_path.resolve()),
         },
         {
             "claim": "Day/band stratification reveals substantial within-track heterogeneity, which is one reason public observation-domain benchmarking remains necessary.",
-            "evidence": repo_relative_path(day_band_path),
+            "evidence": str(day_band_path.resolve()),
         },
     ]

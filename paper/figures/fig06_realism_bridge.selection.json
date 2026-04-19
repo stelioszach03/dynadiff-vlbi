@@ -1,0 +1,7 @@
+{
+  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/mnras_bridge_default32_residual_refine/predictions/test_predictions.npz",
+  "dataset_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/data/generated/mnras_bridge_default32_shared/test.npz",
+  "sample_index": 58,
+  "frame_index": 0,
+  "selection_rule": "maximum residual-refinement gain over baseline_learned by sample MSE, then by frame MSE"
+}

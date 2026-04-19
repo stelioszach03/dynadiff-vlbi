@@ -65,10 +65,10 @@ def test_export_split_manifests_is_deterministic(tmp_path: Path) -> None:
     dataset_dir.mkdir(parents=True)
     _write_toy_dataset(dataset_dir)
     config = load_experiment_config(
-        base_path=ROOT / "configs/emc_benchmark_station_dropout_default64.yaml",
+        base_path=ROOT / "configs/emc_benchmark_station_dropout_default32.yaml",
         train_path=ROOT / "configs/train.yaml",
         eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
+        preset="default32",
         default_base_path=ROOT / DEFAULT_BASE_CONFIG_PATH,
     )
     config.holdout.eval_support_fractions = (0.6,)
@@ -91,73 +91,3 @@ def test_export_split_manifests_is_deterministic(tmp_path: Path) -> None:
     assert np.array_equal(split_a["support_mask"], split_b["support_mask"])
     assert np.array_equal(split_a["target_mask"], split_b["target_mask"])
     assert np.all(split_a["target_unit_count"] >= 1)
-
-
-def test_export_split_manifests_supports_public_style_dataset_without_ground_truth(tmp_path: Path) -> None:
-    dataset_dir = tmp_path / "dataset"
-    dataset_dir.mkdir(parents=True)
-    _write_toy_dataset(dataset_dir)
-    with np.load(dataset_dir / "test.npz") as payload:
-        public_like = {key: payload[key] for key in payload.files if key != "ground_truth"}
-    np.savez_compressed(dataset_dir / "test.npz", **public_like)
-
-    config = load_experiment_config(
-        base_path=ROOT / "configs/emc_real_public_eht_validation_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / DEFAULT_BASE_CONFIG_PATH,
-    )
-    config.holdout.eval_support_fractions = (0.6,)
-
-    manifest = export_split_manifests(
-        config=config,
-        dataset_dir=dataset_dir,
-        output_dir=tmp_path / "public_manifest",
-    )
-
-    split = np.load(tmp_path / "public_manifest" / "support_60_split_manifest.npz")
-    assert manifest["support_fractions"]["60"]["sample_count"] == 2
-    assert split["support_mask"].shape[0] == 2
-    assert split["target_mask"].shape[0] == 2
-
-
-def test_export_split_manifests_supports_public_style_sample_specific_geometry(tmp_path: Path) -> None:
-    dataset_dir = tmp_path / "dataset"
-    dataset_dir.mkdir(parents=True)
-    _write_toy_dataset(dataset_dir)
-    with np.load(dataset_dir / "test.npz") as payload:
-        public_like = {key: payload[key] for key in payload.files if key != "ground_truth"}
-
-    sample_count = int(public_like["vis_real"].shape[0])
-    public_like["frame_uv_indices"] = np.repeat(
-        public_like["frame_uv_indices"][None, ...],
-        sample_count,
-        axis=0,
-    ).astype(np.int32)
-    public_like["frame_uv_coords"] = np.repeat(
-        public_like["frame_uv_coords"][None, ...],
-        sample_count,
-        axis=0,
-    ).astype(np.float32)
-    np.savez_compressed(dataset_dir / "test.npz", **public_like)
-
-    config = load_experiment_config(
-        base_path=ROOT / "configs/emc_real_public_eht_validation_default64.yaml",
-        train_path=ROOT / "configs/train.yaml",
-        eval_path=ROOT / "configs/eval.yaml",
-        preset="default64",
-        default_base_path=ROOT / DEFAULT_BASE_CONFIG_PATH,
-    )
-    config.holdout.eval_support_fractions = (0.6,)
-
-    manifest = export_split_manifests(
-        config=config,
-        dataset_dir=dataset_dir,
-        output_dir=tmp_path / "public_manifest_sample_specific",
-    )
-
-    split = np.load(tmp_path / "public_manifest_sample_specific" / "support_60_split_manifest.npz")
-    assert manifest["support_fractions"]["60"]["sample_count"] == sample_count
-    assert split["support_mask"].shape[0] == sample_count
-    assert split["target_mask"].shape[0] == sample_count

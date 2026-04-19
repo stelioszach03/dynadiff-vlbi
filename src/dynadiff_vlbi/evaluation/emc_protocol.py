@@ -21,7 +21,6 @@ from dynadiff_vlbi.evaluation.metrics import (
     compute_reconstruction_metrics,
     observed_visibility_rmse,
 )
-from dynadiff_vlbi.emc.baselines import load_dps_baseline
 from dynadiff_vlbi.models.factory import build_model
 from dynadiff_vlbi.physics.classical_reconstruction import tikhonov_iterative_reconstruction
 from dynadiff_vlbi.utils.config import ExperimentConfig, ModelConfig
@@ -46,8 +45,8 @@ class LoadedComparator:
     key: str
     label: str
     kind: str
-    model: Any
-    model_config: Any
+    model: torch.nn.Module | None
+    model_config: ModelConfig | None
 
 
 def aggregate_metrics(metric_rows: list[dict[str, float]]) -> dict[str, float]:
@@ -84,17 +83,6 @@ def load_comparators(specs: list[ComparatorSpec], device: torch.device) -> dict[
     for spec in specs:
         if spec.kind in {"dirty", "tikhonov", "ehtim_bridge"}:
             loaded[spec.key] = LoadedComparator(spec.key, spec.label, spec.kind, None, None)
-            continue
-        if spec.kind == "dps":
-            if spec.checkpoint_path is None or not spec.checkpoint_path.exists():
-                raise FileNotFoundError(f"Missing DPS checkpoint for comparator '{spec.key}': {spec.checkpoint_path}")
-            loaded[spec.key] = LoadedComparator(
-                spec.key,
-                spec.label,
-                spec.kind,
-                load_dps_baseline(spec.checkpoint_path, device=device),
-                None,
-            )
             continue
         if spec.checkpoint_path is None or not spec.checkpoint_path.exists():
             raise FileNotFoundError(f"Missing checkpoint for comparator '{spec.key}': {spec.checkpoint_path}")
@@ -165,22 +153,6 @@ def _predict_phase2(
     if hasattr(outputs, "pre_dc_prediction"):
         result["pre_dc_prediction"] = outputs.pre_dc_prediction.squeeze(0).squeeze(0).cpu().numpy().astype(np.float32)
     return result
-
-
-def _predict_dps(
-    baseline,
-    support_measurements: np.ndarray,
-    support_mask: np.ndarray,
-    support_dirty: np.ndarray,
-) -> np.ndarray:
-    return np.asarray(
-        baseline.sample(
-            support_vis=support_measurements.astype(np.complex64),
-            support_mask=support_mask.astype(np.float32),
-            dirty_recon=support_dirty.astype(np.float32),
-        ),
-        dtype=np.float32,
-    )
 
 
 def _prediction_metrics(
@@ -338,14 +310,6 @@ def evaluate_emc_condition(
                 if comparator.kind == "dirty":
                     continue
                 if comparator.kind == "tikhonov":
-                    continue
-                if comparator.kind == "dps":
-                    predictions[key] = _predict_dps(
-                        comparator.model,
-                        split.support_measurements,
-                        split.support_mask,
-                        split.support_dirty.astype(np.float32),
-                    )
                     continue
                 if comparator.kind == "baseline":
                     predictions[key] = _predict_baseline(
