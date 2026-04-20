@@ -1,0 +1,51 @@
+# =============================================================================
+# Oracle training — default configuration
+# =============================================================================
+# Used by scripts/train_oracle.py. Parameters here feed directly into:
+#   - src/dynadiff_vlbi/oracle/heavy_hitter_oracle.py::HeavyHitterOracleConfig
+#   - src/dynadiff_vlbi/oracle/training.py::OracleTrainingConfig
+#
+# Parameter counts: hidden_dim=256, num_heads=4, num_self_layers=2,
+# num_cross_layers=1, mlp_ratio=1.5 lands at ~1.5M parameters. The
+# target band is 0.5-2M per the Phase 3 spec in the thesis-extension plan.
+# =============================================================================
+
+project:
+  name: oracle_default
+  seed: 1729
+
+# --- HeavyHitterOracle architecture ---
+oracle:
+  hidden_dim: 256
+  num_heads: 4
+  num_self_layers: 2
+  num_cross_layers: 1
+  dropout: 0.1
+  mlp_ratio: 1.5
+  vis_feature_dim: 3      # (Re y, Im y, |y|)
+  uv_feature_dim: 3       # (u, v, t)
+
+# --- Training loop hyperparameters ---
+training:
+  learning_rate: 1.0e-4
+  weight_decay: 0.0
+  batch_size: 16
+  num_epochs: 50
+  ranking_weight: 0.1
+  top_k: 8
+  log_clip_min: 1.0e-8
+  grad_clip_norm: 1.0
+
+# --- Synthetic-data generation (used when real visibility datasets are absent) ---
+data:
+  signal_var: 1.0
+  noise_var: 0.01
+  signal_dim: 256          # n — signal dimension (flattened image)
+  num_measurements: 128    # m — total measurement rows per sample
+  support_fractions: [0.2, 0.4, 0.6, 0.8]
+  samples_per_epoch: 256
+  val_samples_per_epoch: 64
+
+paths:
+  checkpoint_dir: checkpoints/oracle/v1
+  log_dir: runs/oracle_v1
