@@ -1,0 +1,152 @@
+{
+  "Panel A \u2014 small-scale (n=256)": {
+    "fitted_C1": 0.00816322733958885,
+    "coherence": 1.0000000000000002,
+    "n_signal": 256,
+    "m_measurements": 128,
+    "k_sparsity": 8,
+    "sweep": [
+      {
+        "alpha": 0.2,
+        "analytical_gap": 0.9038831218762012,
+        "empirical_gap": 0.9094802612045705,
+        "theorem1prime_bound": 2.897058823529409,
+        "relative_error": 0.006192326411351944
+      },
+      {
+        "alpha": 0.3,
+        "analytical_gap": 0.8474945533769063,
+        "empirical_gap": 0.8606020992610184,
+        "theorem1prime_bound": 1.6899509803921553,
+        "relative_error": 0.015466230233438204
+      },
+      {
+        "alpha": 0.4,
+        "analytical_gap": 0.7835497835497834,
+        "empirical_gap": 0.7911130447644646,
+        "theorem1prime_bound": 1.0863970588235283,
+        "relative_error": 0.009652559892769938
+      },
+      {
+        "alpha": 0.5,
+        "analytical_gap": 0.7242647058823524,
+        "empirical_gap": 0.7245082351492167,
+        "theorem1prime_bound": 0.7242647058823523,
+        "relative_error": 0.0003362434547568396
+      },
+      {
+        "alpha": 0.6,
+        "analytical_gap": 0.6924259900038461,
+        "empirical_gap": 0.6961758082424427,
+        "theorem1prime_bound": 0.4828431372549016,
+        "relative_error": 0.00541547875546357
+      },
+      {
+        "alpha": 0.7,
+        "analytical_gap": 0.6388028895768835,
+        "empirical_gap": 0.6514012291006901,
+        "theorem1prime_bound": 0.31039915966386533,
+        "relative_error": 0.019721794828059153
+      },
+      {
+        "alpha": 0.8,
+        "analytical_gap": 0.5852187028657609,
+        "empirical_gap": 0.5763003132688052,
+        "theorem1prime_bound": 0.181066176470588,
+        "relative_error": 0.015239413151499216
+      },
+      {
+        "alpha": 0.9,
+        "analytical_gap": 0.47209653092005904,
+        "empirical_gap": 0.4707035006967989,
+        "theorem1prime_bound": 0.08047385620915022,
+        "relative_error": 0.0029507317508673542
+      },
+      {
+        "alpha": 0.95,
+        "analytical_gap": 0.5098039215686275,
+        "empirical_gap": 0.5009160140293201,
+        "theorem1prime_bound": 0.038119195046439625,
+        "relative_error": 0.017433972480949245
+      }
+    ],
+    "max_relative_error": 0.019721794828059153,
+    "relative_error_at_ref_alpha": 0.0003362434547568396,
+    "runtime_seconds": 0.7200569590204395
+  },
+  "Panel B \u2014 EHT-per-frame regime (n=1024)": {
+    "fitted_C1": 0.0017103411596016763,
+    "coherence": 1.0000000000000002,
+    "n_signal": 1024,
+    "m_measurements": 512,
+    "k_sparsity": 32,
+    "sweep": [
+      {
+        "alpha": 0.2,
+        "analytical_gap": 0.9043519846963176,
+        "empirical_gap": 0.9089356659316108,
+        "theorem1prime_bound": 3.0349264705882364,
+        "relative_error": 0.005068470366471728
+      },
+      {
+        "alpha": 0.3,
+        "analytical_gap": 0.8493810932194116,
+        "empirical_gap": 0.8547401558249104,
+        "theorem1prime_bound": 1.7703737745098045,
+        "relative_error": 0.006309373552437243
+      },
+      {
+        "alpha": 0.4,
+        "analytical_gap": 0.8051989525451876,
+        "empirical_gap": 0.8154898006263424,
+        "theorem1prime_bound": 1.1380974264705885,
+        "relative_error": 0.012780503562040151
+      },
+      {
+        "alpha": 0.5,
+        "analytical_gap": 0.7587316176470591,
+        "empirical_gap": 0.7696296975749826,
+        "theorem1prime_bound": 0.7587316176470592,
+        "relative_error": 0.014363550528868233
+      },
+      {
+        "alpha": 0.6,
+        "analytical_gap": 0.6891439502630334,
+        "empirical_gap": 0.6944069769756726,
+        "theorem1prime_bound": 0.5058210784313728,
+        "relative_error": 0.007637049865460357
+      },
+      {
+        "alpha": 0.7,
+        "analytical_gap": 0.6562261268143614,
+        "empirical_gap": 0.6652181661956218,
+        "theorem1prime_bound": 0.3251706932773111,
+        "relative_error": 0.013702653725343223
+      },
+      {
+        "alpha": 0.8,
+        "analytical_gap": 0.6443675509419444,
+        "empirical_gap": 0.6516638742000688,
+        "theorem1prime_bound": 0.18968290441176472,
+        "relative_error": 0.01132323197755457
+      },
+      {
+        "alpha": 0.9,
+        "analytical_gap": 0.615532487504806,
+        "empirical_gap": 0.6214404344627599,
+        "theorem1prime_bound": 0.08430351307189543,
+        "relative_error": 0.009598107456363456
+      },
+      {
+        "alpha": 0.95,
+        "analytical_gap": 0.5852187028657606,
+        "empirical_gap": 0.5944103467908132,
+        "theorem1prime_bound": 0.03993324303405578,
+        "relative_error": 0.015706340005953248
+      }
+    ],
+    "max_relative_error": 0.015706340005953248,
+    "relative_error_at_ref_alpha": 0.014363550528868233,
+    "runtime_seconds": 5.94385554100154
+  }
+}

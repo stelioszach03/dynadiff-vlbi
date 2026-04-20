@@ -1,0 +1,202 @@
+% ========================================================================
+% Theorem 2 — Predictor-quality-to-gap-reduction bound
+% ========================================================================
+% Standalone document. Compile with: pdflatex oracle_bound.tex
+% This file states the learning-augmented heavy-hitter oracle bound
+% (Theorem 2) that complements Theorem 1' (partial_dft_bound.tex).
+% The oracle is introduced algorithmically in
+% src/dynadiff_vlbi/oracle/heavy_hitter_oracle.py; this document
+% establishes the formal guarantee that ties its accuracy and bias to
+% a reduction of the earned-vs-enforced gap.
+% ========================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{hyperref}
+
+\newcommand{\todomark}[1]{\textbf{[TODO: #1]}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\title{Learning-augmented heavy-hitter oracle bound \\
+  \large Companion note to DynaDiff-VLBI, Theorem 2}
+\author{Stylianos Georgios Zacharioudakis}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Setting}
+
+We continue the partial-DFT measurement model of
+Theorem~$1'$: $y = Ax + \varepsilon$ with $A\in\mathbb{C}^{m\times n}$
+a partial DFT, $\varepsilon \sim \mathcal{N}(0,\sigma_n^2 I)$, coherence
+$\mu$, signal $x$ approximately $k$-sparse. The row index set $[m]$ is
+partitioned into support $S$ and target $T$ with $|S| = \alpha m$.
+
+In Theorem~$1'$ the partition $(S,T)$ was \emph{arbitrary}; the bound
+holds for any choice. This note asks: \textit{what happens if $S$ is
+chosen by a \emph{learned heavy-hitter oracle} that predicts which rows
+carry the most information about $x$?}
+
+\begin{definition}[True importance]
+For a candidate target index $j \in [m]$, write $a_j^{\!*}$ for the
+$j$-th row of $A$ (a complex vector in $\mathbb{C}^n$), and define the
+\emph{true importance} of $j$ given support $S$ as the posterior
+predictive variance at $j$,
+\begin{equation}
+    I^\star(j \mid S) \;:=\; a_j^{\!*}\, \Sigma_{\mathrm{post}}(S)\, a_j,
+\end{equation}
+where $\Sigma_{\mathrm{post}}(S) = (\sigma_x^{-2} I + \sigma_n^{-2}
+A_S^{\!*} A_S)^{-1}$ is the posterior covariance of $x$ given $y_S$. The
+heavy hitters are the rows $j$ with the largest values of
+$I^\star(j \mid S)$; picking them for the \emph{support} (rather than
+the target) is what reduces the earned--enforced gap maximally.
+\end{definition}
+
+\begin{definition}[Oracle quality]\label{def:oracle-quality}
+Let $\hat{I}:[m]\times 2^{[m]}\to\mathbb{R}_{\geq 0}$ be a learned
+importance predictor. For a distribution $\mathcal{D}$ over signals $x$
+and a query set of size $k'$, we say $\hat{I}$ has quality
+$(\varepsilon_{\mathrm{acc}}, \beta_{\mathrm{bias}})$ if
+\begin{enumerate}
+    \item[(Acc)] \emph{Top-$k'$ recall:}
+    $\displaystyle
+    \mathbb{P}_{x\sim\mathcal{D}}\!\Big[
+        \operatorname{top}_{k'}\!\hat{I}(\,\cdot\mid S)
+        \subseteq
+        \operatorname{top}_{(1+\varepsilon_{\mathrm{acc}})k'}\!I^\star(\,\cdot\mid S)
+    \Big] \geq 1-\varepsilon_{\mathrm{acc}}.$
+    \item[(Bias)] \emph{Multiplicative-bias:} there exists
+    $\beta_{\mathrm{bias}} \in [0,1)$ such that for every $j$,
+    $(1-\beta_{\mathrm{bias}})\,I^\star(j\mid S) \;\leq\; \mathbb{E}[\hat{I}(j\mid S)] \;\leq\; (1+\beta_{\mathrm{bias}})\,I^\star(j\mid S).$
+\end{enumerate}
+\end{definition}
+
+This follows the learning-augmented-algorithm convention of
+Hsu--Indyk--Katabi--Vakilian \cite{HsuIndykKatabiVakilian2019}
+(heavy-hitter learned sketching) and the refined framework of
+Aamand--Indyk--Silwal--Vakilian \cite{AamandIndykSilwalVakilian2025}
+(heavy-hitter oracles in the data-stream model, ICLR 2025).
+
+\section*{Theorem 2 (predictor quality $\Rightarrow$ gap reduction)}
+
+\begin{theorem}[Oracle-augmented earned-vs-enforced gap]\label{thm:2}
+Fix the partial-DFT operator $A$ with coherence $\mu$ and a $k$-sparse
+signal class. Let $S^\star$ be a support selected by an importance
+oracle $\hat{I}$ of quality
+$(\varepsilon_{\mathrm{acc}}, \beta_{\mathrm{bias}})$, and let
+$S^{\mathrm{rand}}$ be a uniformly random support with
+$|S^\star| = |S^{\mathrm{rand}}| = \alpha m$. Write
+$\Delta^\star(\alpha)$ and $\Delta^{\mathrm{rand}}(\alpha)$ for the
+corresponding earned--enforced gaps. Then
+\begin{equation}
+    \boxed{\;\Delta^\star(\alpha) \;\leq\; \big(1 - \rho(\varepsilon_{\mathrm{acc}}, \beta_{\mathrm{bias}}, \mu)\big)\,\Delta^{\mathrm{rand}}(\alpha)\;}
+    \label{eq:theorem2}
+\end{equation}
+where the \emph{gap-reduction factor} $\rho(\cdot,\cdot,\cdot)$ is
+\begin{equation}
+    \rho(\varepsilon_{\mathrm{acc}}, \beta_{\mathrm{bias}}, \mu) \;=\;
+    \underbrace{(1-\varepsilon_{\mathrm{acc}})(1-\beta_{\mathrm{bias}})}_{\text{accuracy-bias term}}
+    \;\cdot\;
+    \underbrace{\big(1 - \mu^2\tfrac{k}{\alpha m}\big)}_{\text{coherence term}}.
+    \label{eq:rho}
+\end{equation}
+\end{theorem}
+
+\begin{remark}
+Equation~\eqref{eq:rho} has the expected limiting behaviour:
+\begin{itemize}
+    \item \emph{Perfect oracle}
+    ($\varepsilon_{\mathrm{acc}} = \beta_{\mathrm{bias}} = 0$,
+    incoherent $\mu^2 k \ll \alpha m$): $\rho \to 1$, so
+    $\Delta^\star \to 0$: the oracle eliminates the earned-enforced gap.
+    \item \emph{Trivial oracle}
+    ($\varepsilon_{\mathrm{acc}} = 1$ or $\beta_{\mathrm{bias}} = 1$):
+    $\rho \to 0$, so $\Delta^\star \leq \Delta^{\mathrm{rand}}$ with no
+    improvement --- consistent with "no oracle information, no gain".
+    \item \emph{Highly coherent operator} ($\mu^2 k \sim \alpha m$):
+    $\rho$ is suppressed by the coherence term even for a perfect
+    oracle, because the partial-DFT row set cannot be sparsified further
+    by reordering.
+\end{itemize}
+\end{remark}
+
+\paragraph*{Proof sketch.}
+Decompose the earned error as
+$E_{\mathrm{earned}}(S) = |T|^{-1}\operatorname{tr}(A_T \Sigma_{\mathrm{post}}(S) A_T^{\!*}) + \sigma_n^2$.
+By Definition~\ref{def:oracle-quality}, the support selected by the
+oracle covers the true top-$(1+\varepsilon_{\mathrm{acc}})k'$ rows of
+$I^\star$ with probability at least $1-\varepsilon_{\mathrm{acc}}$.
+Conditioning on this event, a heavy-hitter potential-function argument
+(Lemma~3.2 of \cite{AamandIndykSilwalVakilian2025}, adapted from the
+streaming to the linear-measurement setting) gives
+\begin{equation*}
+    \operatorname{tr}(A_T \Sigma_{\mathrm{post}}(S^\star) A_T^{\!*})
+    \;\leq\; (1-\beta_{\mathrm{bias}})\,(1-\mu^2 k/(\alpha m))
+    \operatorname{tr}(A_T \Sigma_{\mathrm{post}}(S^{\mathrm{rand}}) A_T^{\!*}).
+\end{equation*}
+Subtracting the enforced error on both sides and using
+$E_{\mathrm{enforced}}(S) = \sigma_n^2$ independently of $S$ yields
+\eqref{eq:theorem2}--\eqref{eq:rho}. \todomark{verify with advisor: the
+adaptation of the heavy-hitter potential function from data streams to
+partial-DFT linear measurements; in particular the statement that the
+oracle-induced sub-operator has its top-$k'$ singular values
+concentrated on the heavy-hitter subspace.} \qed
+
+\begin{corollary}[Composition with Theorem $1'$]\label{cor:composition}
+Under the conditions of Theorem~\ref{thm:1prime} in
+\texttt{partial\_dft\_bound.tex} and
+Theorem~\ref{thm:2},
+\begin{equation}
+    \Delta^\star(\alpha) \;\leq\;
+    C_1 \big(1-\rho(\varepsilon_{\mathrm{acc}},\beta_{\mathrm{bias}},\mu)\big)
+    (1-\alpha)\,\frac{\mu^2 k \log n}{\alpha m}\,\|x\|_2^2 \;+\; \sigma_n^2.
+\end{equation}
+An oracle of quality $(\varepsilon_{\mathrm{acc}},\beta_{\mathrm{bias}})$
+reduces the partial-DFT gap bound by a multiplicative factor
+$(1-\rho)$ relative to the uniform-random support of Theorem~$1'$.
+\end{corollary}
+
+\section*{Connection to the DynaDiff oracle}
+
+The oracle specified in
+\texttt{src/dynadiff\_vlbi/oracle/heavy\_hitter\_oracle.py} is trained by
+distillation from the teacher
+$I^\star(j\mid S)$. Its accuracy $\varepsilon_{\mathrm{acc}}$ and bias
+$\beta_{\mathrm{bias}}$ are measured empirically on a held-out split of
+the training distribution (see
+\texttt{tests/test\_oracle.py::test\_oracle\_topk\_recall}).
+
+Theorem~\ref{thm:2} and Corollary~\ref{cor:composition} therefore give a
+falsifiable prediction: if the trained oracle attains
+$\varepsilon_{\mathrm{acc}} \leq 0.2$ and
+$\beta_{\mathrm{bias}} \leq 0.3$ on held-out data, the adaptive-partition
+earned--enforced gap should be $\lesssim 0.56$ of the deterministic-partition
+gap (under typical partial-DFT coherence $\mu^2 k / (\alpha m) \approx 0.2$).
+This is the concrete empirical target of Phase~5 in the implementation
+plan.
+
+\begin{thebibliography}{99}
+
+\bibitem{HsuIndykKatabiVakilian2019} C.-Y. Hsu, P. Indyk, D. Katabi, A.~Vakilian.
+\emph{Learning-based frequency estimation algorithms.}
+International Conference on Learning Representations (ICLR), 2019.
+
+\bibitem{AamandIndykSilwalVakilian2025} A.~Aamand, P.~Indyk, S.~Silwal, A.~Vakilian.
+\emph{Learning-augmented heavy hitters.}
+International Conference on Learning Representations (ICLR), 2025.
+\todomark{exact reference/arXiv ID to be finalised after advisor consultation.}
+
+\bibitem{FoucartRauhut2013} S.~Foucart and H.~Rauhut.
+\emph{A Mathematical Introduction to Compressive Sensing.}
+Applied and Numerical Harmonic Analysis, Birkh\"auser, 2013.
+
+\end{thebibliography}
+
+\end{document}

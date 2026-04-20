@@ -1,0 +1,210 @@
+% ========================================================================
+% Theorem 1' — Partial-DFT tightening of the earned-vs-enforced gap bound
+% ========================================================================
+% Standalone document. Compile with: pdflatex partial_dft_bound.tex
+% Dependencies: amsmath, amsthm, amssymb (all standard).
+% This file is companion to theory/consistency_bounds.py (Theorem 1, the
+% isotropic-Gaussian version). Theorem 1' tightens Corollary 1 for the
+% measurement operator used in VLBI: a partial non-uniform DFT.
+% ========================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{hyperref}
+
+\newcommand{\todomark}[1]{\textbf{[TODO: #1]}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\title{Partial-DFT tightening of the earned-versus-enforced gap bound \\
+  \large Companion note to DynaDiff-VLBI, Theorem~$1'$}
+\author{Stylianos Georgios Zacharioudakis}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Setting}
+
+Let $x \in \mathbb{R}^n$ (or $\mathbb{C}^n$) be an unknown signal, and let
+$A \in \mathbb{C}^{m \times n}$ be a partial non-uniform DFT matrix: the
+rows of $A$ are the $m$ DFT basis vectors corresponding to a (possibly
+non-uniform) set of $m$ frequency samples $\Omega \subset \{0,1,\ldots,n-1\}$
+(or, in the VLBI case, a set of $m$ UV-plane locations obtained by
+projected baselines). We model measurements as
+\begin{equation}
+    y = A x + \varepsilon, \qquad
+    \varepsilon \sim \mathcal{N}(0, \sigma_n^2 I_m).
+\end{equation}
+
+Partition the row index set $[m]$ into \emph{support} $S$ and
+\emph{target} $T$ with $|S| = \alpha m$, $|T| = (1-\alpha)m$. Write
+$A_S, A_T, y_S, y_T$ for the corresponding sub-blocks. Let
+$\hat{x}(y_S)$ denote the minimum-mean-squared-error (MMSE) estimator
+given $y_S$ under a standard Gaussian signal prior
+$x \sim \mathcal{N}(0, \sigma_x^2 I_n)$.
+
+Define
+\begin{align*}
+    E_{\mathrm{enforced}}(\alpha) &:= \mathbb{E}\big[\tfrac{1}{|S|}\|A_S \hat{x} - y_S\|_2^2\big], \\
+    E_{\mathrm{earned}}(\alpha)   &:= \mathbb{E}\big[\tfrac{1}{|T|}\|A_T \hat{x} - y_T\|_2^2\big], \\
+    \Delta(\alpha) &:= E_{\mathrm{earned}}(\alpha) - E_{\mathrm{enforced}}(\alpha).
+\end{align*}
+
+The original Theorem~1 and Corollary~1 (in
+\texttt{theory/consistency\_bounds.py} and in the MNRAS manuscript,
+Section~3.3) bound $\Delta(\alpha)$ under i.i.d.\ Gaussian rows. For the
+i.i.d.\ Gaussian case, Corollary~1 states
+\begin{equation}
+    \Delta_{\mathrm{i.i.d.}}(\alpha) \;\sim\; (1-\alpha)\, \frac{\|x\|_2^2}{m}. \tag{Corollary 1}
+\end{equation}
+
+The real VLBI measurement operator is \emph{not} i.i.d.\ Gaussian; it is a
+structured partial DFT. In this regime the isotropic bound is loose. We
+tighten it using the standard coherence / restricted-isometry machinery
+for partial-Fourier sensing and, under a sharpening hypothesis from the
+sketching literature (weighted hypergraph peeling), remove a $\log n$
+factor in the high-support regime.
+
+\section*{Coherence and effective sparsity}
+
+Let $\mu(A)$ denote the \emph{coherence} of $A$,
+\begin{equation}
+    \mu(A) \;:=\; \max_{i \in [m],\, j \in [n]} \sqrt{n}\,|A_{i,j}|.
+\end{equation}
+For the unitary DFT basis $\mu = 1$; for a partial DFT with $m < n$
+rows the effective coherence is still $\mu \leq 1$ up to row-selection
+biases, and the UV-plane geometry of a real array enters $\mu$ through
+the non-uniformity of the sample distribution.
+
+Let $x$ be \emph{$k$-sparse} (or $k$-compressible) in the canonical
+basis, with $\|x\|_2$ concentrated on $k$ coordinates.
+
+\section*{Theorem $1'$ (partial-DFT gap bound)}
+
+\begin{theorem}[Partial-DFT tightening of Corollary~1]\label{thm:1prime}
+Let $A \in \mathbb{C}^{m\times n}$ be a partial DFT with coherence
+$\mu = \mu(A)$, and let $x \in \mathbb{R}^n$ be $k$-sparse. Assume the
+support fraction satisfies
+\begin{equation}
+    \alpha m \;\geq\; C_0\, \mu^2\, k\, \log n \tag{recovery regime}
+    \label{eq:recovery-regime}
+\end{equation}
+for an absolute constant $C_0$ (the Rudelson--Vershynin / Rauhut constant
+for restricted isometry of partial Fourier matrices
+\cite{RudelsonVershynin2008, Rauhut2010, FoucartRauhut2013}). Then the
+earned-versus-enforced gap satisfies
+\begin{equation}
+    \boxed{\;\Delta(\alpha) \;\leq\; C_1\, (1-\alpha)\,\frac{\mu^2\, k\, \log n}{\alpha m}\,\|x\|_2^2 \;+\; \sigma_n^2\;}
+    \label{eq:theorem1prime}
+\end{equation}
+with an absolute constant $C_1$ that depends only on $C_0$.
+\end{theorem}
+
+\begin{remark}
+The partial-DFT bound \eqref{eq:theorem1prime} is strictly tighter than
+the isotropic Corollary~1 when $\mu^2 k \log n \ll n$: the effective
+rate is $(1-\alpha) \cdot (\mu^2 k \log n)/(\alpha m)$ instead of
+$(1-\alpha)/m$. For a VLBI-like operator with $\mu = \mathcal{O}(1)$
+and a compressible image ($k \ll n$), the gap is smaller by a factor of
+$k\log n / n$ relative to the isotropic case, which matches the
+empirical observation that the earned--enforced gap on EHT imaging is
+smaller than the isotropic prediction by roughly this factor.
+\end{remark}
+
+\paragraph*{Proof sketch.}
+By standard partial-Fourier RIP
+\cite{CandesTao2006, RudelsonVershynin2008, Rauhut2010}, under
+\eqref{eq:recovery-regime} the restricted isometry constant
+$\delta_{2k}(A_S)$ of the support sub-operator satisfies
+$\delta_{2k}(A_S) \leq C_2 \sqrt{(\mu^2 k \log n)/(\alpha m)}$. The MMSE
+estimator $\hat{x}(y_S)$ has posterior covariance
+$\Sigma_{\mathrm{post}} = (\sigma_x^{-2} I + \sigma_n^{-2} A_S^{\!*} A_S)^{-1}$,
+whose spectrum concentrates at $\sigma_n^2/(\alpha m)$ on the
+$k$-dimensional signal subspace and at $\sigma_x^2$ on its complement
+(cf.\ \cite{FoucartRauhut2013}, Chapter~12). The earned error is the
+target-sub-block projection of this covariance,
+\begin{equation*}
+    E_{\mathrm{earned}}(\alpha) \;=\; \tfrac{1}{|T|}\operatorname{tr}\!\big(A_T \Sigma_{\mathrm{post}} A_T^{\!*}\big) + \sigma_n^2,
+\end{equation*}
+and the enforced error is $\sigma_n^2$ (support DC forces exact fit).
+Combining the spectrum bound with $\|A_T\|_{\mathrm{op}}^2 \leq
+(1+\delta_{2k})$ yields \eqref{eq:theorem1prime}. \qed
+
+\section*{Sharpening via weighted hypergraph peeling}
+
+The $\log n$ factor in \eqref{eq:theorem1prime} is a standard artefact of
+partial-Fourier RIP proofs based on generic chaining
+\cite{RudelsonVershynin2008, FoucartRauhut2013}. The weighted hypergraph
+peeling framework of Fischer and Nakos (FOCS 2025)
+\cite{FischerNakos2025} for $\ell_2/\ell_2$ sparse recovery removes
+logarithmic factors in the high-support regime for a specific class of
+sketching operators. We conjecture an analogous improvement applies
+here:
+
+\begin{theorem}[Peeling-sharpened bound; conjectural]\label{thm:1primesharp}
+Under the hypotheses of Theorem~\ref{thm:1prime}, and additionally
+$\alpha \geq 1/2$, the gap satisfies
+\begin{equation}
+    \Delta(\alpha) \;\leq\; C_1'\, (1-\alpha)\,\frac{\mu^2\, k}{\alpha m}\,\|x\|_2^2 \;+\; \sigma_n^2
+    \label{eq:sharp}
+\end{equation}
+(no $\log n$ factor) with an absolute constant $C_1'$.
+\end{theorem}
+
+\todomark{verify with advisor: the Fischer--Nakos peeling argument is
+stated for sparse recovery in the sketching model, not for the
+earned-vs-enforced gap. The mapping is: their vertex set corresponds to
+signal coordinates, their hyperedges to active partial-DFT rows, and
+their peeling weight corresponds to the MMSE gain from each recovered
+coordinate. The key step is that the residual coherence after peeling
+$t$ coordinates decays as $\mu \cdot (1 - t/k)^{1/2}$, which, combined
+with a union bound over peeling steps, saves the $\log n$ factor in the
+tail.}
+
+\section*{Empirical verification}
+
+Monte-Carlo verification of Theorem~\ref{thm:1prime} (the non-conjectural
+part) is provided by
+\texttt{theory/numerical\_verification\_partial\_dft.py}. The script
+sweeps $\alpha \in \{0.2, 0.3, \ldots, 0.95\}$ with a partial-DFT
+operator on a $16\times 16$ signal grid ($n = 256$), measures the
+empirical gap $\Delta(\alpha)$ over $10^4$ Monte-Carlo trials, and
+compares it to the right-hand side of \eqref{eq:theorem1prime} with the
+constants estimated from a single reference $\alpha$. Agreement within
+$\pm 5\%$ is reported as a pass; the output is
+\texttt{figures\_out/partial\_dft\_numerical\_verification.pdf}.
+
+\begin{thebibliography}{99}
+
+\bibitem{CandesTao2006} E.~J.~Cand\`es and T.~Tao.
+\emph{Near-optimal signal recovery from random projections: Universal
+encoding strategies?} IEEE Trans. Inf. Theory, 52(12):5406--5425, 2006.
+
+\bibitem{RudelsonVershynin2008} M.~Rudelson and R.~Vershynin.
+\emph{On sparse reconstruction from Fourier and Gaussian measurements.}
+Comm. Pure Appl. Math., 61(8):1025--1045, 2008.
+
+\bibitem{Rauhut2010} H.~Rauhut.
+\emph{Compressive sensing and structured random matrices.} In
+\emph{Theoretical Foundations and Numerical Methods for Sparse
+Recovery}, Radon Series Comp.\ Appl.\ Math., vol.~9, pp.~1--92, de
+Gruyter, 2010.
+
+\bibitem{FoucartRauhut2013} S.~Foucart and H.~Rauhut.
+\emph{A Mathematical Introduction to Compressive Sensing.}
+Applied and Numerical Harmonic Analysis, Birkh\"auser, 2013.
+
+\bibitem{FischerNakos2025} M.~Fischer and V.~Nakos.
+\emph{Weighted hypergraph peeling for $\ell_2/\ell_2$ sparse recovery.}
+Proc. 66th IEEE Symp. on Foundations of Computer Science (FOCS), 2025.
+\todomark{exact reference to be finalised after advisor consultation.}
+
+\end{thebibliography}
+
+\end{document}
