@@ -304,3 +304,56 @@ class HeavyHitterOracle(nn.Module):
 
     def num_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters())
+
+
+def load_oracle_from_checkpoint(
+    checkpoint_path,
+    device=None,
+):
+    """Instantiate a :class:`HeavyHitterOracle` from a ``best.ckpt`` produced
+    by :func:`dynadiff_vlbi.oracle.training.train_oracle`.
+
+    The checkpoint is:
+        {"model_state_dict": ..., "config": {...}, "history": ...}
+
+    Architecture is reconstructed from the state-dict shapes plus the
+    stored training config so the loader survives CLI / YAML drift.
+    The returned module is on ``device`` and in ``eval`` mode.
+    """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    elif not isinstance(device, torch.device):
+        device = torch.device(device)
+
+    ckpt = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+    state_dict = ckpt["model_state_dict"] if "model_state_dict" in ckpt else ckpt
+
+    hidden_dim = int(state_dict["support_embed.0.weight"].shape[0])
+    num_self = 1 + max(
+        (int(k.split(".")[1]) for k in state_dict.keys() if k.startswith("self_blocks.")),
+        default=-1,
+    )
+    num_cross = 1 + max(
+        (int(k.split(".")[1]) for k in state_dict.keys() if k.startswith("cross_blocks.")),
+        default=-1,
+    )
+    mlp_hidden = int(state_dict["self_blocks.0.mlp.0.weight"].shape[0])
+    mlp_ratio = float(mlp_hidden) / float(hidden_dim)
+    cfg_payload = ckpt.get("config", {}) if isinstance(ckpt, dict) else {}
+    num_heads = int(cfg_payload.get("num_heads", 4))
+
+    cfg = HeavyHitterOracleConfig(
+        hidden_dim=hidden_dim,
+        num_heads=num_heads,
+        num_self_layers=max(1, num_self),
+        num_cross_layers=max(1, num_cross),
+        dropout=0.0,
+        mlp_ratio=mlp_ratio,
+        vis_feature_dim=3,
+        uv_feature_dim=3,
+    )
+    oracle = HeavyHitterOracle(cfg)
+    oracle.load_state_dict(state_dict)
+    oracle.to(device)
+    oracle.train(False)
+    return oracle

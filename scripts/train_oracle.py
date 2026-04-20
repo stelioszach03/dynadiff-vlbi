@@ -179,7 +179,39 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--val-samples-per-epoch", type=int, default=None)
     parser.add_argument("--device", default=None)
     parser.add_argument("--seed", type=int, default=None)
-    return parser.parse_args()
+    parser.add_argument(
+        "--data-source",
+        default="synthetic",
+        choices=["synthetic", "visibility_dataset"],
+        help=(
+            "Where training samples come from. 'synthetic' uses the"
+            " _SyntheticPartialDFTEpoch generator (fast). 'visibility_dataset'"
+            " loads real VisibilityConditionedDataset splits via"
+            " --data-dir and applies the holdout adapter."
+        ),
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=None,
+        help=(
+            "Directory with train.npz / val.npz (required when"
+            " --data-source=visibility_dataset). Typically"
+            " data/generated/<preset> or data/generated/ccrr_default32_seed7_shared."
+        ),
+    )
+    parser.add_argument(
+        "--base-config",
+        default="configs/base.yaml",
+        help=(
+            "Dataset base config when --data-source=visibility_dataset;"
+            " used only to build the ModelConfig required by"
+            " VisibilityConditionedDataset (visibility_representation etc.)."
+        ),
+    )
+    args = parser.parse_args()
+    if args.data_source == "visibility_dataset" and args.data_dir is None:
+        parser.error("--data-source=visibility_dataset requires --data-dir")
+    return args
 
 
 # ---------------------------------------------------------------------------
@@ -278,33 +310,97 @@ def main() -> None:
 
     rng = np.random.default_rng(seed)
 
-    def train_factory(epoch: int):
-        epoch_rng = np.random.default_rng(seed + epoch * 1000 + 1)
-        return _SyntheticPartialDFTEpoch(
-            num_samples=samples_per_epoch,
-            batch_size=training_cfg.batch_size,
-            signal_dim=training_cfg.signal_dim,
-            num_measurements=training_cfg.num_measurements,
-            support_fractions=training_cfg.support_fractions,
-            signal_var=training_cfg.signal_var,
-            noise_var=training_cfg.noise_var,
-            device=device,
-            rng=epoch_rng,
+    # Factories: either the legacy synthetic generator or the real
+    # VisibilityConditionedDataset-backed adapter. Both emit dicts with the
+    # same key schema consumed by distill_oracle_step.
+    if args.data_source == "synthetic":
+        def train_factory(epoch: int):
+            epoch_rng = np.random.default_rng(seed + epoch * 1000 + 1)
+            return _SyntheticPartialDFTEpoch(
+                num_samples=samples_per_epoch,
+                batch_size=training_cfg.batch_size,
+                signal_dim=training_cfg.signal_dim,
+                num_measurements=training_cfg.num_measurements,
+                support_fractions=training_cfg.support_fractions,
+                signal_var=training_cfg.signal_var,
+                noise_var=training_cfg.noise_var,
+                device=device,
+                rng=epoch_rng,
+            )
+
+        def val_factory(epoch: int):
+            epoch_rng = np.random.default_rng(seed + 999983)
+            return _SyntheticPartialDFTEpoch(
+                num_samples=val_samples_per_epoch,
+                batch_size=training_cfg.batch_size,
+                signal_dim=training_cfg.signal_dim,
+                num_measurements=training_cfg.num_measurements,
+                support_fractions=training_cfg.support_fractions,
+                signal_var=training_cfg.signal_var,
+                noise_var=training_cfg.noise_var,
+                device=device,
+                rng=epoch_rng,
+            )
+    else:
+        # Lazy imports: only paid when --data-source=visibility_dataset.
+        from dynadiff_vlbi.data.visibility_dataset import build_visibility_dataloaders
+        from dynadiff_vlbi.oracle import (
+            OracleDataAdapterConfig,
+            VisibilityDatasetOracleAdapter,
+        )
+        from dynadiff_vlbi.utils.config import (
+            DEFAULT_BASE_CONFIG_PATH,
+            load_experiment_config,
         )
 
-    def val_factory(epoch: int):
-        epoch_rng = np.random.default_rng(seed + 999983)  # fixed across epochs
-        return _SyntheticPartialDFTEpoch(
-            num_samples=val_samples_per_epoch,
+        base_path = Path(args.base_config)
+        if not base_path.is_absolute():
+            base_path = ROOT / base_path
+        experiment_cfg = load_experiment_config(
+            base_path=base_path,
+            train_path=ROOT / "configs" / "train.yaml",
+            eval_path=ROOT / "configs" / "eval.yaml",
+            preset=None,
+            default_base_path=ROOT / DEFAULT_BASE_CONFIG_PATH,
+        )
+        data_dir = Path(args.data_dir)
+        if not data_dir.is_absolute():
+            data_dir = ROOT / data_dir
+        train_loader, val_loader, _ = build_visibility_dataloaders(
+            data_dir=data_dir,
             batch_size=training_cfg.batch_size,
-            signal_dim=training_cfg.signal_dim,
-            num_measurements=training_cfg.num_measurements,
-            support_fractions=training_cfg.support_fractions,
+            num_workers=0,
+            model_config=experiment_cfg.model,
+        )
+        image_size = int(experiment_cfg.dataset.image_size)
+        sequence_length = int(experiment_cfg.dataset.sequence_length)
+        adapter_cfg = OracleDataAdapterConfig(
+            support_fractions=tuple(training_cfg.support_fractions),
             signal_var=training_cfg.signal_var,
             noise_var=training_cfg.noise_var,
-            device=device,
-            rng=epoch_rng,
         )
+
+        def train_factory(epoch: int):
+            return VisibilityDatasetOracleAdapter(
+                dataloader=train_loader,
+                image_size=image_size,
+                sequence_length=sequence_length,
+                base_seed=seed + epoch * 1000 + 1,
+                device=device,
+                rng=np.random.default_rng(seed + epoch * 1000 + 1),
+                adapter_config=adapter_cfg,
+            )
+
+        def val_factory(epoch: int):
+            return VisibilityDatasetOracleAdapter(
+                dataloader=val_loader,
+                image_size=image_size,
+                sequence_length=sequence_length,
+                base_seed=seed + 999983,
+                device=device,
+                rng=np.random.default_rng(seed + 999983),
+                adapter_config=adapter_cfg,
+            )
 
     oracle = HeavyHitterOracle(oracle_cfg)
     num_params = oracle.num_parameters()

@@ -8,9 +8,15 @@ the DynaDiff-VLBI benchmark into an adaptive one.
 Formal guarantees are in theory/oracle_bound.tex (Theorem 2).
 """
 
+from dynadiff_vlbi.oracle.data_adapter import (
+    DETERMINISTIC_STRATEGIES,
+    OracleDataAdapterConfig,
+    VisibilityDatasetOracleAdapter,
+)
 from dynadiff_vlbi.oracle.heavy_hitter_oracle import (
     HeavyHitterOracle,
     HeavyHitterOracleConfig,
+    load_oracle_from_checkpoint,
 )
 from dynadiff_vlbi.oracle.teacher import (
     compute_importance_teacher,
@@ -27,6 +33,7 @@ from dynadiff_vlbi.oracle.training import (
 __all__ = [
     "HeavyHitterOracle",
     "HeavyHitterOracleConfig",
+    "load_oracle_from_checkpoint",
     "compute_importance_teacher",
     "compute_importance_teacher_batched",
     "compute_posterior_covariance",
@@ -34,4 +41,7 @@ __all__ = [
     "distill_oracle_step",
     "set_oracle_seed",
     "train_oracle",
+    "DETERMINISTIC_STRATEGIES",
+    "OracleDataAdapterConfig",
+    "VisibilityDatasetOracleAdapter",
 ]
