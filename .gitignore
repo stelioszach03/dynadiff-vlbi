@@ -1,33 +1,167 @@
-# Python
+# ==========================================================================
+# DynaDiff-VLBI .gitignore
+# ==========================================================================
+
+# ---- Python / build ----
 __pycache__/
 *.py[cod]
-*.egg-info/
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Testing / linting caches
+# ---- Pytest / coverage / linting ----
 .pytest_cache/
-.hypothesis/
-.ruff_cache/
 .coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.mypy_cache/
+.pyright/
+.ruff_cache/
 
-# Environments
-.venv/
-venv/
+# ---- ML artifacts (big files — never commit) ----
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+*.bin
 
-# Editor / OS
-.DS_Store
-.idea/
-.vscode/
-.ipynb_checkpoints/
+# Training runs & logs
+runs/
+logs/
+lightning_logs/
+wandb/
+mlruns/
+tb_logs/
+tensorboard/
+*.log
+events.out.tfevents.*
 
-# Tooling
-.claude/
+# Model / data caches
+.cache/
+hf_cache/
+grmhd_cache/
+*.npy
+*.npz
+!tests/**/*.npy
+!tests/**/*.npz
 
-# Generated artifacts (not tracked — reproduce locally)
-outputs/
-data/generated/
+# ---- Data ----
+eht_data/
+data/raw/
+data/processed/
 data/external/
+data/interim/
+data/generated/
 data/real/
+*.uvfits
+*.fits
+grmhd_sims/
+simulations/
+*.h5
+!tests/**/*.h5
+!tests/fixtures/**
+
+# ---- Figures & generated outputs ----
+figures_out/
+tables_out/
+paper_out/
+results/
+outputs/
+_outputs/
+
+# Generated plots outside of paper/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+!paper/**/*.pdf
+!paper/**/*.png
+!paper/**/figures/**
+!README_assets/**
+
+# ---- Editor / IDE / OS ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.cursor/
+
+# ---- Claude Code local state (per-machine, not project content) ----
+.claude/
+CLAUDE.md
+claude_code_rules.md
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ---- Secrets ----
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+credentials/
+config/secrets.yaml
+ssh_password.txt
+tunnel_info.txt
+
+# ---- Colab-specific ----
+/content/
+sample_data/
+
+# ---- Virtual environments ----
+venv/
+env/
+ENV/
+.venv/
+
+# ---- Temporary / scratch ----
 tmp/
 temp/
+scratch/
+.scratch/
+TODO.local.md
+NOTES.local.md
+*.tmp
+*.bak
+
+# ---- Force-include ----
+!paper/**
+!theory/**
+!configs/**
+!scripts/**
+!benchmark/**
+!notebooks/*.ipynb
+!tests/**
+
+# ---- Re-ignore caches even under force-included paths ----
+**/__pycache__/
+**/.pytest_cache/
+**/.ipynb_checkpoints/
