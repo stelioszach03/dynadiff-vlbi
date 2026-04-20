@@ -32,9 +32,10 @@ from dynadiff_vlbi.oracle import (
     compute_importance_teacher_batched,
     compute_posterior_covariance,
     distill_oracle_step,
+    set_oracle_seed,
     train_oracle,
 )
-from dynadiff_vlbi.oracle.training import log_mse_loss, topk_recall
+from dynadiff_vlbi.oracle.training import log_mse_loss, topk_recall, _run_validation
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +320,84 @@ def test_trained_oracle_topk_recall_exceeds_random_baseline():
 # ---------------------------------------------------------------------------
 # Bonus: end-to-end train_oracle runs and produces a checkpoint
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 pre-items: seed discipline + per-alpha recall bucketing
+# ---------------------------------------------------------------------------
+
+
+def test_set_oracle_seed_reproduces_oracle_weights():
+    """Same seed -> bit-identical oracle initial weights + identical forward."""
+    cfg = HeavyHitterOracleConfig(
+        hidden_dim=32, num_heads=4, num_self_layers=1, num_cross_layers=1, mlp_ratio=1.5,
+        dropout=0.0,
+    )
+    set_oracle_seed(424242)
+    oracle_a = HeavyHitterOracle(cfg)
+    x_a = torch.randn(2, 8, 3)
+    set_oracle_seed(424242)
+    oracle_b = HeavyHitterOracle(cfg)
+    x_b = torch.randn(2, 8, 3)
+    # Tensor inputs drawn after seed reset should match.
+    torch.testing.assert_close(x_a, x_b)
+    # Every parameter should match bit-for-bit.
+    for (na, pa), (nb, pb) in zip(oracle_a.named_parameters(), oracle_b.named_parameters()):
+        assert na == nb
+        torch.testing.assert_close(pa, pb, rtol=0.0, atol=0.0)
+
+
+def test_set_oracle_seed_different_seeds_diverge():
+    """Different seeds -> different oracle weights (sanity)."""
+    cfg = HeavyHitterOracleConfig(
+        hidden_dim=32, num_heads=4, num_self_layers=1, num_cross_layers=1, mlp_ratio=1.5,
+        dropout=0.0,
+    )
+    set_oracle_seed(0)
+    oracle_a = HeavyHitterOracle(cfg)
+    set_oracle_seed(1)
+    oracle_b = HeavyHitterOracle(cfg)
+    # At least one parameter tensor should differ.
+    any_different = False
+    for (_, pa), (_, pb) in zip(oracle_a.named_parameters(), oracle_b.named_parameters()):
+        if not torch.equal(pa, pb):
+            any_different = True
+            break
+    assert any_different, "seed change did not perturb oracle weights"
+
+
+def test_validation_bucketing_reports_recall_per_support_fraction():
+    """``_run_validation`` should bucket top-k recall by the
+    ``support_fraction`` tag emitted by the data iterator, so we can
+    read per-alpha quality (0.2 / 0.4 / 0.6 / 0.8) at a glance.
+    """
+    cfg = HeavyHitterOracleConfig(
+        hidden_dim=32, num_heads=4, num_self_layers=1, num_cross_layers=1, mlp_ratio=1.5,
+        dropout=0.0,
+    )
+    oracle = HeavyHitterOracle(cfg)
+    rng = np.random.default_rng(0)
+    batches_by_alpha = {}
+    for alpha in [0.2, 0.4, 0.6, 0.8]:
+        batch, _, _ = _make_tiny_batch(cfg, rng, batch_size=2, n=32, m=16)
+        batch["support_fraction"] = torch.tensor(alpha)
+        batches_by_alpha[alpha] = batch
+
+    def factory(epoch: int):
+        # Return one batch per training alpha in a deterministic order.
+        return [batches_by_alpha[a] for a in [0.2, 0.4, 0.6, 0.8]]
+
+    training_cfg = OracleTrainingConfig(batch_size=2, top_k=3, grad_clip_norm=None)
+    metrics = _run_validation(
+        oracle, factory, epoch=0, device=torch.device("cpu"), config=training_cfg
+    )
+    assert set(metrics.keys()) == {"val_loss", "val_topk_recall", "recall_by_alpha"}
+    # We should have one bucket per distinct alpha we emitted.
+    buckets = metrics["recall_by_alpha"]
+    assert set(buckets.keys()) == {"0.20", "0.40", "0.60", "0.80"}
+    # All recalls finite in [0, 1].
+    for a, r in buckets.items():
+        assert 0.0 <= r <= 1.0, f"recall for alpha={a} out of range: {r}"
 
 
 def test_train_oracle_produces_checkpoint(tmp_path: Path):

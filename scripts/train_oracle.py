@@ -36,6 +36,7 @@ from dynadiff_vlbi.oracle.heavy_hitter_oracle import (
 from dynadiff_vlbi.oracle.teacher import compute_importance_teacher_batched
 from dynadiff_vlbi.oracle.training import (
     OracleTrainingConfig,
+    set_oracle_seed,
     train_oracle,
 )
 
@@ -149,6 +150,9 @@ class _SyntheticPartialDFTEpoch:
                 "support_uv": support_uv,
                 "target_uv": target_uv,
                 "teacher_importance": teacher,
+                # Tag the batch with the support fraction so the
+                # validation loop can bucket top-k recall by alpha.
+                "support_fraction": torch.tensor(alpha, device=self.device),
             }
 
 
@@ -253,8 +257,7 @@ def main() -> None:
         val_samples_per_epoch = int(args.val_samples_per_epoch)
 
     seed = args.seed if args.seed is not None else int(cfg.get("project", {}).get("seed", 0))
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+    set_oracle_seed(seed)
 
     device = torch.device(
         args.device
@@ -312,10 +315,16 @@ def main() -> None:
     def _cb(epoch: int, metrics: dict) -> None:
         with open(history_path, "a") as f:
             f.write(json.dumps(metrics) + "\n")
+        alpha_line = ""
+        recall_by_alpha = metrics.get("recall_by_alpha") or {}
+        if recall_by_alpha:
+            buckets = " ".join(f"alpha={a}:{r:.3f}" for a, r in sorted(recall_by_alpha.items()))
+            alpha_line = f" | {buckets}"
         print(
             f"[epoch {epoch:03d}] train_loss={metrics['train_loss']:.6f} "
             f"val_loss={metrics['val_loss']:.6f} "
             f"val_topk_recall={metrics['val_topk_recall']:.4f}"
+            + alpha_line
         )
 
     summary = train_oracle(

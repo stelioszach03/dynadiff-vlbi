@@ -20,6 +20,7 @@ from dynadiff_vlbi.oracle.teacher import (
 from dynadiff_vlbi.oracle.training import (
     OracleTrainingConfig,
     distill_oracle_step,
+    set_oracle_seed,
     train_oracle,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "compute_posterior_covariance",
     "OracleTrainingConfig",
     "distill_oracle_step",
+    "set_oracle_seed",
     "train_oracle",
 ]

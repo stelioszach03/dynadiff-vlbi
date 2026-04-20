@@ -18,13 +18,43 @@ selection at inference time.
 from __future__ import annotations
 
 import math
+import os
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Mapping
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
+
+
+# ---------------------------------------------------------------------------
+# Seed discipline
+# ---------------------------------------------------------------------------
+
+
+def set_oracle_seed(seed: int) -> None:
+    """Seed every RNG source used by oracle training.
+
+    Covers: ``random``, ``numpy``, PyTorch CPU, PyTorch CUDA (all devices),
+    and the ``PYTHONHASHSEED`` env var (relevant when CPython creates new
+    worker processes for the DataLoader).
+
+    Call this once at the top of any oracle-training entry point. It makes
+    fresh ``OracleTrainingConfig``-seeded runs byte-reproducible modulo
+    non-determinism in cuDNN kernels, which is controlled separately by
+    ``torch.use_deterministic_algorithms`` -- not enabled here because the
+    multi-head attention kernels we rely on don't have deterministic
+    implementations at the batch sizes we use.
+    """
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 @dataclass
@@ -160,11 +190,23 @@ def _run_validation(
     epoch: int,
     device: torch.device,
     config: OracleTrainingConfig,
-) -> tuple[float, float]:
-    """Return (mean_val_loss, mean_topk_recall) over one validation epoch."""
+) -> dict:
+    """Return validation metrics over one validation epoch.
+
+    Includes:
+      - ``val_loss``: mean log-MSE across all batches
+      - ``val_topk_recall``: mean top-k recall across all batches
+      - ``recall_by_alpha``: dict mapping each training support fraction
+        (e.g. 0.2, 0.4, 0.6, 0.8) to its bucketed top-k recall. Buckets
+        are populated from ``batch['support_fraction']`` if the iterator
+        emits it; missing tags collapse into an ``unknown`` bucket. This
+        is what flags a partial-coverage failure mode (e.g. oracle good
+        at alpha=0.8 but useless at alpha=0.2).
+    """
     oracle.train(False)
     val_losses: list[float] = []
     recalls: list[float] = []
+    alpha_recalls: dict[str, list[float]] = {}
     with torch.no_grad():
         for batch in iterator_factory(epoch):
             batch = {
@@ -181,10 +223,25 @@ def _run_validation(
             val_losses.append(
                 float(log_mse_loss(student, teacher, clip_min=config.log_clip_min))
             )
-            recalls.append(topk_recall(student, teacher, config.top_k))
+            recall = topk_recall(student, teacher, config.top_k)
+            recalls.append(recall)
+
+            alpha_tag = batch.get("support_fraction")
+            if isinstance(alpha_tag, torch.Tensor):
+                alpha_tag = float(alpha_tag.flatten()[0].item())
+            key = f"{alpha_tag:.2f}" if alpha_tag is not None else "unknown"
+            alpha_recalls.setdefault(key, []).append(recall)
+
     val_loss = float(sum(val_losses) / max(len(val_losses), 1))
     val_recall = float(sum(recalls) / max(len(recalls), 1))
-    return val_loss, val_recall
+    recall_by_alpha = {
+        k: float(sum(vs) / len(vs)) for k, vs in sorted(alpha_recalls.items())
+    }
+    return {
+        "val_loss": val_loss,
+        "val_topk_recall": val_recall,
+        "recall_by_alpha": recall_by_alpha,
+    }
 
 
 def train_oracle(
@@ -196,7 +253,18 @@ def train_oracle(
     checkpoint_dir: Path | None = None,
     progress_callback: Callable[[int, dict], None] | None = None,
 ) -> dict:
-    """Train the oracle to distill the teacher signal."""
+    """Train the oracle to distill the teacher signal.
+
+    Learning-rate schedule: fixed AdamW at ``config.learning_rate`` for
+    the entire run. We deliberately do **not** add a warmup or cosine
+    schedule in Phase 3 because (a) the target is a static posterior-
+    variance vector, not a noisy gradient target, so warmup provides
+    no stability gain, and (b) leaving the schedule flat keeps the
+    50-epoch training run easy to reason about when we compare against
+    the adaptive-partition benchmark in Phase 5. If training diverges
+    on real VLBI data in Phase 4, reintroduce a linear warmup over the
+    first 5 % of steps before adding cosine decay.
+    """
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     oracle.to(device)
     optimizer = optim.AdamW(
@@ -221,16 +289,21 @@ def train_oracle(
 
         val_loss = float("nan")
         val_recall = float("nan")
+        recall_by_alpha: dict[str, float] = {}
         if validation_iterator_factory is not None:
-            val_loss, val_recall = _run_validation(
+            val_metrics = _run_validation(
                 oracle, validation_iterator_factory, epoch, device, config
             )
+            val_loss = val_metrics["val_loss"]
+            val_recall = val_metrics["val_topk_recall"]
+            recall_by_alpha = val_metrics["recall_by_alpha"]
 
         epoch_summary = {
             "epoch": epoch,
             "train_loss": train_loss,
             "val_loss": val_loss,
             "val_topk_recall": val_recall,
+            "recall_by_alpha": recall_by_alpha,
         }
         history.append(epoch_summary)
         if progress_callback is not None:
