@@ -60,7 +60,21 @@ def parse_args() -> argparse.Namespace:
         "--emc-checkpoint",
         default="outputs/emc_benchmark_baseline_tracks_main_noclosure/checkpoints/best.pt",
     )
-    return parser.parse_args()
+    # Phase 4 / 5: adaptive-partition plumbing.
+    parser.add_argument(
+        "--partition-mode",
+        default="deterministic",
+        choices=["deterministic", "adaptive"],
+    )
+    parser.add_argument(
+        "--oracle-ckpt",
+        default=None,
+        help="Path to a trained HeavyHitterOracle checkpoint; required when --partition-mode=adaptive.",
+    )
+    args = parser.parse_args()
+    if args.partition_mode == "adaptive" and args.oracle_ckpt is None:
+        parser.error("--partition-mode=adaptive requires --oracle-ckpt <path>")
+    return args
 
 
 def _track_slug(release_code: str) -> str:
@@ -70,6 +84,17 @@ def _track_slug(release_code: str) -> str:
 
 def main() -> int:
     args = parse_args()
+    # Expose adaptive-partition selection to the real-data protocol via the
+    # same env-var channel the synthetic benchmark uses. No oracle load here;
+    # the protocol evaluator does the lazy load via resolve_partition_strategy.
+    import os as _os
+
+    _os.environ["DYNADIFF_PARTITION_MODE"] = args.partition_mode
+    if args.oracle_ckpt is not None:
+        _os.environ["DYNADIFF_ORACLE_CKPT"] = str((ROOT / args.oracle_ckpt).resolve())
+    elif "DYNADIFF_ORACLE_CKPT" in _os.environ and args.partition_mode != "adaptive":
+        del _os.environ["DYNADIFF_ORACLE_CKPT"]
+
     release_codes = [item.strip() for item in args.release_codes.split(",") if item.strip()]
     families = [item.strip() for item in args.families.split(",") if item.strip()]
     device = get_device()

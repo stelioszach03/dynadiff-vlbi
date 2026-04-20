@@ -14,6 +14,7 @@ from dynadiff_vlbi.data.measurement_holdout import (
     HOLDOUT_STRATEGY_DESCRIPTIONS,
     HOLDOUT_STRATEGY_LABELS,
     build_structured_holdout_split,
+    resolve_partition_strategy,
     closure_triangle_support_counts,
 )
 from dynadiff_vlbi.evaluation.metrics import (
@@ -277,6 +278,7 @@ def evaluate_emc_condition(
                 np.complex64
             )
             observed_mask = dataset["mask"][sample_index].astype(np.float32)
+            strategy, oracle_model = resolve_partition_strategy(config.holdout)
             split = build_structured_holdout_split(
                 measurements=measurements,
                 observed_mask=observed_mask,
@@ -287,7 +289,8 @@ def evaluate_emc_condition(
                 base_seed=config.project.seed,
                 sample_index=sample_index,
                 support_fraction=float(support_fraction),
-                strategy=config.holdout.strategy,
+                strategy=strategy,
+                oracle_model=oracle_model,
             )
             target = dataset["ground_truth"][sample_index].astype(np.float32)
             ring_radius_px = float(dataset["ring_radius_px"][sample_index])

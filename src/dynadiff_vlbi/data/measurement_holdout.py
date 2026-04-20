@@ -2,13 +2,73 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from itertools import combinations
+from typing import Any
 
 import numpy as np
 
 from dynadiff_vlbi.physics.classical_reconstruction import dirty_image_reconstruction
 from dynadiff_vlbi.physics.sampling import conjugate_index
+
+
+# Module-level cache: oracle checkpoints are expensive to reload per sample,
+# so we keep one-per-path. Keyed by absolute path.
+_ORACLE_CACHE: dict[str, Any] = {}
+
+
+def resolve_partition_strategy(
+    holdout_config: Any,
+) -> tuple[str, Any | None]:
+    """Resolve ``(strategy, oracle_model)`` from a :class:`HoldoutConfig`.
+
+    Env-var overrides (used by the benchmark / EHT runners to thread the
+    choice into subprocess-invoked evaluators without CLI plumbing):
+      * ``DYNADIFF_PARTITION_MODE`` -- "deterministic" or "adaptive"
+      * ``DYNADIFF_ORACLE_CKPT``    -- path to the oracle .ckpt
+
+    Behaviour:
+      * ``partition_mode == "deterministic"`` (the default): returns
+        ``(holdout_config.strategy, None)`` -- legacy path, no oracle.
+      * ``partition_mode == "adaptive"``: returns
+        ``("learned_oracle_importance", oracle_model)`` where the oracle
+        is loaded once per-process from ``holdout_config.oracle_checkpoint``
+        or ``DYNADIFF_ORACLE_CKPT``.
+    """
+    env_mode = os.environ.get("DYNADIFF_PARTITION_MODE")
+    partition_mode = (
+        env_mode
+        if env_mode is not None
+        else getattr(holdout_config, "partition_mode", "deterministic")
+    )
+    if partition_mode not in {"deterministic", "adaptive"}:
+        raise ValueError(
+            f"Unsupported partition_mode '{partition_mode}'. "
+            "Expected 'deterministic' or 'adaptive'."
+        )
+
+    if partition_mode == "deterministic":
+        return getattr(holdout_config, "strategy", "none"), None
+
+    # adaptive mode
+    env_ckpt = os.environ.get("DYNADIFF_ORACLE_CKPT")
+    oracle_ckpt = env_ckpt if env_ckpt else getattr(holdout_config, "oracle_checkpoint", None)
+    if not oracle_ckpt:
+        raise ValueError(
+            "partition_mode='adaptive' requires an oracle checkpoint "
+            "(holdout.oracle_checkpoint in the YAML, --oracle-ckpt on the CLI, "
+            "or DYNADIFF_ORACLE_CKPT in the environment)."
+        )
+
+    abs_path = os.path.abspath(str(oracle_ckpt))
+    if abs_path not in _ORACLE_CACHE:
+        # Local import to avoid a torch-on-import-time penalty for the
+        # deterministic path.
+        from dynadiff_vlbi.oracle import load_oracle_from_checkpoint
+
+        _ORACLE_CACHE[abs_path] = load_oracle_from_checkpoint(abs_path)
+    return "learned_oracle_importance", _ORACLE_CACHE[abs_path]
 
 
 @dataclass(frozen=True)
@@ -30,6 +90,7 @@ HOLDOUT_STRATEGY_LABELS: dict[str, str] = {
     "baseline_track_blocks": "Baseline-track blocks",
     "scan_segment_blocks": "Scan-segment blocks",
     "station_dropout": "Station dropout",
+    "learned_oracle_importance": "Learned oracle importance (adaptive)",
 }
 
 HOLDOUT_STRATEGY_DESCRIPTIONS: dict[str, str] = {
@@ -44,6 +105,10 @@ HOLDOUT_STRATEGY_DESCRIPTIONS: dict[str, str] = {
     "station_dropout": (
         "Withhold all baselines incident to a deterministic subset of stations across time. "
         "This stresses station-structured missingness rather than pointwise dropout."
+    ),
+    "learned_oracle_importance": (
+        "Rank observed baselines by a learned HeavyHitterOracle's predicted posterior variance "
+        "and withhold the lowest-importance fraction. Adaptive partition — requires oracle model."
     ),
 }
 
@@ -244,6 +309,159 @@ def deterministic_target_stations(
     return np.asarray(selected, dtype=np.int64)
 
 
+def _oracle_score_baselines(
+    *,
+    observed_mask: np.ndarray,
+    measurements: np.ndarray,
+    frame_uv_indices: np.ndarray,
+    frame_uv_coords: np.ndarray,
+    oracle_model,  # dynadiff_vlbi.oracle.HeavyHitterOracle
+    available_baselines: np.ndarray,
+    base_seed: int,
+    sample_index: int,
+) -> np.ndarray:
+    """Score each available baseline by the oracle's predicted importance.
+
+    The oracle is run in two passes (cross-scoring): half the available
+    baselines act as "support" context for the self-attention stack, the
+    other half are the "query" target positions scored by cross-attention.
+    Swapping yields a score for every baseline. Per-frame scores are
+    averaged to produce one scalar per baseline index.
+
+    Returns a float array of length ``available_baselines.shape[0]``
+    aligned with ``available_baselines`` (i.e. higher score = more
+    informative if added to support).
+    """
+
+    # Local import to keep the non-oracle path free of torch when users
+    # don't need adaptive partitioning (e.g. existing deterministic tests).
+    import torch
+
+    baseline_count = int(available_baselines.shape[0])
+    if baseline_count == 0:
+        return np.zeros((0,), dtype=np.float32)
+    if baseline_count < 2:
+        return np.zeros((baseline_count,), dtype=np.float32)
+
+    oracle_model.train(False)
+    device = next(oracle_model.parameters()).device
+
+    sequence_length = int(observed_mask.shape[0])
+    scores = np.zeros(baseline_count, dtype=np.float64)
+    counts = np.zeros(baseline_count, dtype=np.int64)
+
+    # Deterministic half-split of the available baselines; shifted per
+    # (base_seed, sample_index) so different samples see different splits.
+    rng = np.random.default_rng(
+        (int(base_seed) * 10_007 + int(sample_index) * 97) & 0xFFFFFFFF
+    )
+    perm = rng.permutation(baseline_count)
+    split = baseline_count // 2
+    group_a = np.sort(perm[:split])  # indices into available_baselines
+    group_b = np.sort(perm[split:])
+
+    for frame_index in range(sequence_length):
+        vis_features = np.zeros((baseline_count, 3), dtype=np.float32)
+        uv_features = np.zeros((baseline_count, 3), dtype=np.float32)
+        valid = np.zeros(baseline_count, dtype=bool)
+        for local_i, baseline_index in enumerate(available_baselines.tolist()):
+            row, col = frame_uv_indices[frame_index, int(baseline_index)]
+            row_i, col_i = int(row), int(col)
+            if observed_mask[frame_index, row_i, col_i] <= 0.0:
+                continue
+            value = complex(measurements[frame_index, row_i, col_i])
+            vis_features[local_i] = (value.real, value.imag, abs(value))
+            u, v = frame_uv_coords[frame_index, int(baseline_index)]
+            t_norm = (
+                (frame_index / max(sequence_length - 1, 1)) * 2.0 - 1.0
+                if sequence_length > 1
+                else 0.0
+            )
+            uv_features[local_i] = (float(u), float(v), float(t_norm))
+            valid[local_i] = True
+
+        if valid.sum() < 2:
+            continue
+
+        vis_t = torch.from_numpy(vis_features).unsqueeze(0).to(device)
+        uv_t = torch.from_numpy(uv_features).unsqueeze(0).to(device)
+
+        def _score(support_idx: np.ndarray, target_idx: np.ndarray) -> np.ndarray:
+            if support_idx.size == 0 or target_idx.size == 0:
+                return np.zeros((target_idx.size,), dtype=np.float32)
+            support_sel = torch.from_numpy(support_idx).long().to(device)
+            target_sel = torch.from_numpy(target_idx).long().to(device)
+            sup_vis = vis_t.index_select(1, support_sel)
+            sup_uv = uv_t.index_select(1, support_sel)
+            tgt_uv = uv_t.index_select(1, target_sel)
+            with torch.no_grad():
+                out = oracle_model(sup_vis, sup_uv, tgt_uv)
+            return out.squeeze(0).detach().cpu().numpy().astype(np.float32)
+
+        # Keep only valid entries of each group.
+        grp_a = np.asarray([i for i in group_a if valid[i]], dtype=np.int64)
+        grp_b = np.asarray([i for i in group_b if valid[i]], dtype=np.int64)
+
+        scores_b = _score(grp_a, grp_b)
+        scores_a = _score(grp_b, grp_a)
+
+        for idx, s in zip(grp_b.tolist(), scores_b.tolist()):
+            scores[idx] += float(s)
+            counts[idx] += 1
+        for idx, s in zip(grp_a.tolist(), scores_a.tolist()):
+            scores[idx] += float(s)
+            counts[idx] += 1
+
+    safe_counts = np.where(counts > 0, counts, 1)
+    mean_scores = (scores / safe_counts).astype(np.float32)
+    # Baselines never scored (observed in no frame of the sweep) get score 0;
+    # caller uses mean_scores for ranking, so 0 is a neutral default.
+    return mean_scores
+
+
+def _oracle_target_baseline_indices(
+    *,
+    observed_mask: np.ndarray,
+    measurements: np.ndarray,
+    frame_uv_indices: np.ndarray,
+    frame_uv_coords: np.ndarray,
+    oracle_model,
+    support_fraction: float,
+    base_seed: int,
+    sample_index: int,
+) -> np.ndarray:
+    """Return baseline indices to hold out, picked by the oracle.
+
+    Low-importance baselines (those easiest to predict from the rest)
+    become the target set.
+    """
+
+    available = available_baseline_indices(
+        observed_mask=observed_mask,
+        frame_uv_indices=frame_uv_indices,
+    )
+    if available.shape[0] == 0:
+        return np.zeros((0,), dtype=np.int64)
+
+    scores = _oracle_score_baselines(
+        observed_mask=observed_mask,
+        measurements=measurements,
+        frame_uv_indices=frame_uv_indices,
+        frame_uv_coords=frame_uv_coords,
+        oracle_model=oracle_model,
+        available_baselines=available,
+        base_seed=base_seed,
+        sample_index=sample_index,
+    )
+    support_fraction = normalized_support_fraction(support_fraction)
+    target_count = max(1, int(round((1.0 - support_fraction) * available.shape[0])))
+    target_count = min(target_count, int(available.shape[0]))
+    # Sort ascending by score; ties broken by stable baseline index.
+    order = np.lexsort((available.astype(np.int64), scores))
+    selected_positions = order[:target_count]
+    return available[selected_positions].astype(np.int64)
+
+
 def _restore_dc_support(
     *,
     observed_mask: np.ndarray,
@@ -306,8 +524,14 @@ def build_structured_holdout_split(
     sample_index: int,
     support_fraction: float,
     strategy: str = "baseline_track_blocks",
+    oracle_model=None,
 ) -> HoldoutSplit:
-    """Split observed coefficients into support and target sets with structured holdout."""
+    """Split observed coefficients into support and target sets with structured holdout.
+
+    ``oracle_model`` is required only when ``strategy == "learned_oracle_importance"``
+    and ignored otherwise; this keeps the deterministic strategies free of any
+    dependency on torch at import time.
+    """
 
     if strategy not in HOLDOUT_STRATEGY_DESCRIPTIONS:
         raise ValueError(f"Unsupported holdout strategy '{strategy}'.")
@@ -337,6 +561,33 @@ def build_structured_holdout_split(
             frame_uv_coords=frame_uv_coords,
             observed_mask=observed_mask,
             frame_uv_indices=frame_uv_indices,
+            support_fraction=support_fraction,
+            base_seed=base_seed,
+            sample_index=sample_index,
+        )
+        support_mask, target_mask = _split_from_target_baselines(
+            measurements=measurements,
+            observed_mask=observed_mask,
+            frame_uv_indices=frame_uv_indices,
+            target_baseline_indices=target_baselines,
+        )
+        target_unit_count = int(target_baselines.shape[0])
+        support_unit_count = max(int(available_baselines.shape[0]) - target_unit_count, 0)
+    elif strategy == "learned_oracle_importance":
+        if oracle_model is None:
+            raise ValueError(
+                "learned_oracle_importance requires oracle_model (a trained HeavyHitterOracle)."
+            )
+        available_baselines = available_baseline_indices(
+            observed_mask=observed_mask,
+            frame_uv_indices=frame_uv_indices,
+        )
+        target_baselines = _oracle_target_baseline_indices(
+            observed_mask=observed_mask,
+            measurements=measurements,
+            frame_uv_indices=frame_uv_indices,
+            frame_uv_coords=frame_uv_coords,
+            oracle_model=oracle_model,
             support_fraction=support_fraction,
             base_seed=base_seed,
             sample_index=sample_index,

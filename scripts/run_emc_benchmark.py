@@ -67,11 +67,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-root", default="outputs")
     parser.add_argument("--data-root", default="data/generated")
     parser.add_argument("--skip-existing", action="store_true")
-    return parser.parse_args()
+    # Phase 4: partition mode + oracle checkpoint for adaptive mode.
+    # deterministic (default) -> existing 3 holdout strategies, no oracle dependency.
+    # adaptive -> learned_oracle_importance strategy, requires --oracle-ckpt.
+    parser.add_argument(
+        "--partition-mode",
+        default="deterministic",
+        choices=["deterministic", "adaptive"],
+        help="How to partition observed visibilities into support/target.",
+    )
+    parser.add_argument(
+        "--oracle-ckpt",
+        default=None,
+        help=(
+            "Path to a trained HeavyHitterOracle checkpoint (best.ckpt); "
+            "required when --partition-mode=adaptive."
+        ),
+    )
+    args = parser.parse_args()
+    if args.partition_mode == "adaptive" and args.oracle_ckpt is None:
+        parser.error("--partition-mode=adaptive requires --oracle-ckpt <path>")
+    return args
 
 
 def _run(command: list[str]) -> None:
     print(f"\n[run] {' '.join(command)}", flush=True)
+    # NOTE: subprocess inherits os.environ by default, so DYNADIFF_PARTITION_MODE /
+    # DYNADIFF_ORACLE_CKPT set in main() reach every child automatically.
     subprocess.run(command, cwd=ROOT, check=True)
 
 
@@ -361,6 +383,20 @@ def _benchmark_specs() -> list[BenchmarkConditionSpec]:
 
 def main() -> int:
     args = parse_args()
+    # Phase 4 / 5 wiring: expose partition mode + oracle checkpoint to every
+    # subprocess-invoked evaluator via inherited environment. The resolver
+    # in dynadiff_vlbi.data.measurement_holdout reads these and swaps in
+    # the learned_oracle_importance strategy when adaptive mode is set.
+    import os as _os
+
+    _os.environ["DYNADIFF_PARTITION_MODE"] = args.partition_mode
+    if args.oracle_ckpt is not None:
+        _os.environ["DYNADIFF_ORACLE_CKPT"] = str((ROOT / args.oracle_ckpt).resolve())
+    elif "DYNADIFF_ORACLE_CKPT" in _os.environ and args.partition_mode != "adaptive":
+        # Drop a stale env var from a prior adaptive run when the current
+        # invocation is deterministic.
+        del _os.environ["DYNADIFF_ORACLE_CKPT"]
+
     output_root = (ROOT / args.output_root).resolve()
     data_root = (ROOT / args.data_root).resolve()
     release_root = (output_root / "emc_benchmark_release").resolve()

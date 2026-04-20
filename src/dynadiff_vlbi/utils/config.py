@@ -143,6 +143,12 @@ class HoldoutConfig:
     eval_support_fractions: tuple[float, ...] = (1.0,)
     max_triangles: int = 24
     min_eval_closure_triangles: int = 24
+    # Phase 4: partition mode and optional oracle checkpoint for adaptive mode.
+    # partition_mode="deterministic" (default) keeps the legacy 3-strategy path.
+    # partition_mode="adaptive" requires oracle_checkpoint to point at a trained
+    # HeavyHitterOracle .ckpt and switches `strategy` to "learned_oracle_importance".
+    partition_mode: str = "deterministic"
+    oracle_checkpoint: str | None = None
 
 
 @dataclass
@@ -217,6 +223,41 @@ def _build_config(payload: dict[str, Any], preset_name: str) -> ExperimentConfig
     )
 
 
+def _resolve_inheritance(yaml_path: Path) -> dict[str, Any]:
+    """Load a YAML file and fold in any ``_inherit_from:`` parent chain.
+
+    Supports the thesis-extension overlay convention: a config can start
+    with
+
+        _inherit_from: configs/base.yaml
+
+    and only override the fields that differ from its parent. Parent paths
+    are resolved relative to the repo root (parent of src/ in the install
+    layout). Circular inheritance is guarded with a visited set; missing
+    parents raise FileNotFoundError.
+    """
+    repo_root = Path(__file__).resolve().parents[3]
+
+    def _load(path: Path, seen: set[Path]) -> dict[str, Any]:
+        resolved = path.resolve()
+        if resolved in seen:
+            raise ValueError(f"Cyclic _inherit_from while loading {resolved}")
+        seen = seen | {resolved}
+        payload = load_yaml(resolved)
+        if not isinstance(payload, dict):
+            return payload
+        parent_ref = payload.pop("_inherit_from", None)
+        if parent_ref is None:
+            return payload
+        parent_path = Path(parent_ref)
+        if not parent_path.is_absolute():
+            parent_path = repo_root / parent_path
+        parent_payload = _load(parent_path, seen)
+        return deep_update(parent_payload, payload)
+
+    return _load(yaml_path, seen=set())
+
+
 def load_experiment_config(
     base_path: str | Path,
     train_path: str | Path,
@@ -224,13 +265,19 @@ def load_experiment_config(
     preset: str | None = None,
     default_base_path: str | Path | None = None,
 ) -> ExperimentConfig:
-    """Load and merge the default base, evaluation, optional preset, and custom config files."""
+    """Load and merge the default base, evaluation, optional preset, and custom config files.
+
+    Supports a ``_inherit_from: <path>`` directive at the top of either
+    the ``base`` or ``eval`` YAMLs; the referenced parent (resolved
+    relative to the repo root) is loaded first and then the current file
+    overlaid on top. Applied recursively.
+    """
 
     default_base_resolved = Path(default_base_path or base_path).resolve()
     base_path_resolved = Path(base_path).resolve()
-    default_base_cfg = load_yaml(default_base_resolved)
-    base_cfg = load_yaml(base_path_resolved)
-    eval_cfg = load_yaml(eval_path)
+    default_base_cfg = _resolve_inheritance(default_base_resolved)
+    base_cfg = _resolve_inheritance(base_path_resolved)
+    eval_cfg = _resolve_inheritance(Path(eval_path))
     merged = deep_update(default_base_cfg, eval_cfg)
     if preset is not None:
         train_cfg = load_yaml(train_path)

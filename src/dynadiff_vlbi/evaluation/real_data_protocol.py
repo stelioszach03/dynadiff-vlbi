@@ -13,6 +13,7 @@ from dynadiff_vlbi.data.measurement_holdout import (
     HOLDOUT_STRATEGY_DESCRIPTIONS,
     HOLDOUT_STRATEGY_LABELS,
     build_structured_holdout_split,
+    resolve_partition_strategy,
     closure_triangle_support_counts,
 )
 from dynadiff_vlbi.evaluation.emc_protocol import (
@@ -246,6 +247,7 @@ def evaluate_real_data_condition(
             ).astype(np.complex64)
             sample_sigma = sigma[sample_index].astype(np.float32) if sigma is not None else None
             observed_mask = dataset["mask"][sample_index].astype(np.float32)
+            strategy, oracle_model = resolve_partition_strategy(config.holdout)
             split = build_structured_holdout_split(
                 measurements=measurements,
                 observed_mask=observed_mask,
@@ -256,7 +258,8 @@ def evaluate_real_data_condition(
                 base_seed=config.project.seed,
                 sample_index=sample_index,
                 support_fraction=float(support_fraction),
-                strategy=config.holdout.strategy,
+                strategy=strategy,
+                oracle_model=oracle_model,
             )
 
             support_vis_real = (measurements.real * split.support_mask).astype(np.float32)

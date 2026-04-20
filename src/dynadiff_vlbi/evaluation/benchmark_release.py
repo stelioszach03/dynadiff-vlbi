@@ -11,6 +11,7 @@ from dynadiff_vlbi.data.measurement_holdout import (
     HOLDOUT_STRATEGY_DESCRIPTIONS,
     HOLDOUT_STRATEGY_LABELS,
     build_structured_holdout_split,
+    resolve_partition_strategy,
 )
 from dynadiff_vlbi.utils.config import ExperimentConfig
 from dynadiff_vlbi.utils.logging_utils import save_json
@@ -65,6 +66,7 @@ def export_split_manifests(
             measurements = (
                 dataset["vis_real"][sample_index] + 1j * dataset["vis_imag"][sample_index]
             ).astype(np.complex64)
+            strategy, oracle_model = resolve_partition_strategy(config.holdout)
             split = build_structured_holdout_split(
                 measurements=measurements,
                 observed_mask=dataset["mask"][sample_index].astype(np.float32),
@@ -75,7 +77,8 @@ def export_split_manifests(
                 base_seed=config.project.seed,
                 sample_index=sample_index,
                 support_fraction=float(support_fraction),
-                strategy=config.holdout.strategy,
+                strategy=strategy,
+                oracle_model=oracle_model,
             )
             support_masks.append(split.support_mask.astype(np.float32))
             target_masks.append(split.target_mask.astype(np.float32))
