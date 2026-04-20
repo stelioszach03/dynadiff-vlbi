@@ -74,20 +74,6 @@ Public-release validation uses official EHT calibrated-data releases:
 | `2020-D01-01` | 3C 279 (2017) | [`10.25739/vty0-ve39`](https://doi.org/10.25739/vty0-ve39) |
 | `2021-D03-01` | Centaurus A (2017) | [`10.25739/kejs-2n22`](https://doi.org/10.25739/kejs-2n22) |
 
-## Citation
-
-```bibtex
-@unpublished{zacharioudakis2026earned,
-  author = {Zacharioudakis, Stylianos Georgios},
-  title  = {Earned versus enforced measurement consistency in dynamic VLBI imaging:
-            an evaluation framework with score-based posterior sampling},
-  year   = {2026},
-  note   = {Manuscript}
-}
-```
-
-Machine-readable metadata is also available in [`CITATION.cff`](CITATION.cff).
-
 ## License
 
 Released under the [MIT License](LICENSE).
