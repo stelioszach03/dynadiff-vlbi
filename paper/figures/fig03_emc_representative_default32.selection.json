@@ -7,8 +7,8 @@
   "metric_key": "heldout_visibility_rmse",
   "sample_level_gain": 0.024680599570274353,
   "reference_value": 0.13412268459796906,
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_default32_protocol/predictions/support_40.npz",
-  "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_default32_protocol/logs/per_sample_support_40.csv",
+  "prediction_path": "outputs/emc_default32_protocol/predictions/support_40.npz",
+  "per_sample_csv": "outputs/emc_default32_protocol/logs/per_sample_support_40.csv",
   "support_fraction_tag": "40",
   "condition_title": "Default32"
 }

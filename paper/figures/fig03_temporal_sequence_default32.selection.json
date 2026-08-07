@@ -1,5 +1,5 @@
 {
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/compare_default32_residual_refine_fair8/predictions/test_predictions.npz",
+  "prediction_path": "outputs/compare_default32_residual_refine_fair8/predictions/test_predictions.npz",
   "sample_index": 22,
   "frame_indices": [
     0,

@@ -1,5 +1,5 @@
 {
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/paper_sparse_uv_residual_refine/predictions/test_predictions.npz",
+  "prediction_path": "outputs/paper_sparse_uv_residual_refine/predictions/test_predictions.npz",
   "sample_index": 40,
   "frame_index": 2,
   "selection_rule": "maximum residual-refinement gain over baseline_data_consistent by sample MSE, then by frame MSE"

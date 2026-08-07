@@ -21,8 +21,8 @@
   ],
   "tie_break_decision": "selected 3C279 2017 (2020-D01-01) by minimum release-median distance to pooled public median; ties broken by the documented release order",
   "selection_rule": "release median EMC-minus-residual held-out-visibility gap closest to the pooled public median at 60% support, then sample closest to that release median, then frame with median target-mask occupancy",
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite/baseline_track_blocks/3c279_2017_2020-d01-01/predictions/support_60.npz",
-  "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite/baseline_track_blocks/3c279_2017_2020-d01-01/logs/per_sample_support_60.csv",
+  "prediction_path": "outputs/public_eht_suite/baseline_track_blocks/3c279_2017_2020-d01-01/predictions/support_60.npz",
+  "per_sample_csv": "outputs/public_eht_suite/baseline_track_blocks/3c279_2017_2020-d01-01/logs/per_sample_support_60.csv",
   "figure_layout": [
     "Support-only dirty",
     "Baseline 3D U-Net",

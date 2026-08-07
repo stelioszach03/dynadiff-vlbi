@@ -1,21 +1,21 @@
 # Review Snapshot and Reproducibility Scope
 
-This note defines the repository snapshot that is sufficient to inspect and reproduce the benchmark and public-EHT results reported in the MNRAS manuscript.
+This note defines the repository snapshot that is sufficient to inspect and reproduce the benchmark and public-EHT results reported in the manuscript.
 
 ## Included source components
 
-- core source code under [`src/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/src)
-- resolved experiment configurations under [`configs/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/configs)
-- benchmark and public-validation documentation under [`benchmark/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark)
-- run scripts and artifact builders under [`scripts/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/scripts)
-- regression tests under [`tests/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/tests)
+- core source code under [`src/`](../src)
+- resolved experiment configurations under [`configs/`](../configs)
+- benchmark and public-validation documentation under [`benchmark/`](../benchmark)
+- run scripts and artifact builders under [`scripts/`](../scripts)
+- regression tests under [`tests/`](../tests)
 
 ## Included paper-facing artifacts
 
-- synthetic benchmark artifacts under [`outputs/emc_benchmark_artifacts/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_artifacts)
-- public-EHT suite artifacts under [`outputs/public_eht_suite_artifacts/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite_artifacts)
-- MNRAS real-data and ablation artifacts under [`outputs/mnras_real_data_artifacts/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/mnras_real_data_artifacts)
-- manuscript source and exported PDF under [`paper/`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/paper)
+- synthetic benchmark artifacts under [`outputs/emc_benchmark_artifacts/`](../outputs/emc_benchmark_artifacts)
+- public-EHT suite artifacts under [`outputs/public_eht_suite_artifacts/`](../outputs/public_eht_suite_artifacts)
+- real-data and ablation artifacts under [`outputs/mnras_real_data_artifacts/`](../outputs/mnras_real_data_artifacts)
+- manuscript source and exported PDF under [`paper/`](../paper)
 
 ## Public real-data releases used
 
@@ -40,7 +40,7 @@ python3.11 scripts/run_emc_public_eht_suite.py --skip-existing && \
 python3.11 scripts/generate_public_eht_suite_artifacts.py
 ```
 
-MNRAS paper artifacts and PDF:
+Manuscript artifacts and PDF:
 
 ```bash
 python3.11 scripts/generate_mnras_real_data_artifacts.py && \

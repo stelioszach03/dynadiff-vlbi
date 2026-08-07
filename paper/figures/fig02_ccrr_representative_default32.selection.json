@@ -1,5 +1,5 @@
 {
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/ccrr_seed31_main/predictions/test_predictions.npz",
+  "prediction_path": "outputs/ccrr_seed31_main/predictions/test_predictions.npz",
   "selection_mode": "representative",
   "reference_key": "residual_refinement",
   "candidate_key": "ccrr",

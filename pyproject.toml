@@ -35,5 +35,7 @@ Repository = "https://github.com/stelioszach03/dynadiff-vlbi"
 Manuscript = "paper/manuscript.md"
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+# "." is required: tests/test_partial_dft_bound.py imports the top-level
+# `theory` package, which lives at the repository root, not under src/.
+pythonpath = ["src", "."]
 testpaths = ["tests"]

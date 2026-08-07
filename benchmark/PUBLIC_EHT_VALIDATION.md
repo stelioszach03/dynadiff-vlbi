@@ -1,6 +1,6 @@
 # Public EHT Observation-Domain Validation
 
-This document records the public-EHT validation path used by the MNRAS manuscript.
+This document records the public-EHT validation path used by the manuscript.
 
 The public suite is complementary to the fixed synthetic EMC benchmark. It keeps the same support-target logic, but applies it to official public Event Horizon Telescope calibrated-data releases where no image-domain ground truth exists.
 
@@ -51,10 +51,10 @@ This command:
 ## Core outputs
 
 - suite manifest:
-  - [`outputs/public_eht_suite/suite_manifest.json`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite/suite_manifest.json)
+  - [`outputs/public_eht_suite/suite_manifest.json`](../outputs/public_eht_suite/suite_manifest.json)
 - benchmark matrix:
-  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md)
+  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_matrix.md)
 - robustness summary:
-  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md)
+  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_release_robustness.md)
 - paired-bootstrap summary:
-  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md)
+  - [`outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md`](../outputs/public_eht_suite_artifacts/tables/emc_public_eht_stats.md)

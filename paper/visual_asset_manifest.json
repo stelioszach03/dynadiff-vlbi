@@ -5,8 +5,8 @@
     },
     "fig02_emc_support_fraction_curve": {
       "sources": [
-        "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_default32_protocol/logs/emc_protocol_summary.json",
-        "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_sparse_uv_protocol/logs/emc_protocol_summary.json"
+        "outputs/emc_default32_protocol/logs/emc_protocol_summary.json",
+        "outputs/emc_sparse_uv_protocol/logs/emc_protocol_summary.json"
       ]
     },
     "fig03_emc_representative_default32": {
@@ -18,8 +18,8 @@
       "metric_key": "heldout_visibility_rmse",
       "sample_level_gain": 0.024680599570274353,
       "reference_value": 0.13412268459796906,
-      "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_default32_protocol/predictions/support_40.npz",
-      "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_default32_protocol/logs/per_sample_support_40.csv",
+      "prediction_path": "outputs/emc_default32_protocol/predictions/support_40.npz",
+      "per_sample_csv": "outputs/emc_default32_protocol/logs/per_sample_support_40.csv",
       "support_fraction_tag": "40",
       "condition_title": "Default32"
     },
@@ -32,8 +32,8 @@
       "metric_key": "heldout_visibility_rmse",
       "sample_level_gain": 0.01779317855834961,
       "reference_value": 0.17706391215324402,
-      "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_sparse_uv_protocol/predictions/support_20.npz",
-      "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_sparse_uv_protocol/logs/per_sample_support_20.csv",
+      "prediction_path": "outputs/emc_sparse_uv_protocol/predictions/support_20.npz",
+      "per_sample_csv": "outputs/emc_sparse_uv_protocol/logs/per_sample_support_20.csv",
       "support_fraction_tag": "20",
       "condition_title": "Sparse-uv"
     }

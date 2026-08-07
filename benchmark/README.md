@@ -28,12 +28,12 @@ This command:
 - writes resolved config manifests
 - exports benchmark tables and figures
 
-For the complementary public-M87 validation and the MNRAS-strengthening artifacts, use the top-level README commands instead of treating that path as part of the fixed benchmark release.
+For the complementary public-M87 validation and the supplementary strengthening artifacts, use the top-level README commands instead of treating that path as part of the fixed benchmark release.
 
 For the expanded multi-release public-EHT suite, including the frozen `eht-imaging bridge`, see:
 
-- [`PUBLIC_EHT_VALIDATION.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PUBLIC_EHT_VALIDATION.md)
-- [`REVIEW_SNAPSHOT.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/REVIEW_SNAPSHOT.md)
+- [`PUBLIC_EHT_VALIDATION.md`](../benchmark/PUBLIC_EHT_VALIDATION.md)
+- [`REVIEW_SNAPSHOT.md`](../benchmark/REVIEW_SNAPSHOT.md)
 
 ## Fixed benchmark factors
 
@@ -68,10 +68,10 @@ At minimum, a method should report:
 
 ## Key files
 
-- Public-EHT validation: [`PUBLIC_EHT_VALIDATION.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PUBLIC_EHT_VALIDATION.md)
-- Review snapshot: [`REVIEW_SNAPSHOT.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/REVIEW_SNAPSHOT.md)
-- Benchmark card: [`BENCHMARK_CARD.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/BENCHMARK_CARD.md)
-- Protocol card: [`PROTOCOL_CARD.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/PROTOCOL_CARD.md)
-- Expected outputs: [`EXPECTED_OUTPUTS.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/EXPECTED_OUTPUTS.md)
-- Release checklist: [`RELEASE_CHECKLIST.md`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/RELEASE_CHECKLIST.md)
-- Leaderboard template: [`leaderboard_template.csv`](/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/benchmark/leaderboard_template.csv)
+- Public-EHT validation: [`PUBLIC_EHT_VALIDATION.md`](../benchmark/PUBLIC_EHT_VALIDATION.md)
+- Review snapshot: [`REVIEW_SNAPSHOT.md`](../benchmark/REVIEW_SNAPSHOT.md)
+- Benchmark card: [`BENCHMARK_CARD.md`](../benchmark/BENCHMARK_CARD.md)
+- Protocol card: [`PROTOCOL_CARD.md`](../benchmark/PROTOCOL_CARD.md)
+- Expected outputs: [`EXPECTED_OUTPUTS.md`](../benchmark/EXPECTED_OUTPUTS.md)
+- Release checklist: [`RELEASE_CHECKLIST.md`](../benchmark/RELEASE_CHECKLIST.md)
+- Leaderboard template: [`leaderboard_template.csv`](../benchmark/leaderboard_template.csv)

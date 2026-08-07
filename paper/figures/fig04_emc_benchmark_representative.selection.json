@@ -7,8 +7,8 @@
   "metric_key": "heldout_visibility_rmse",
   "sample_level_gain": 0.011005394160747528,
   "reference_value": 0.08225502073764801,
-  "prediction_path": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_baseline_tracks_protocol/predictions/support_40.npz",
-  "per_sample_csv": "/Users/stelioszacharioudakis/Documents/Papers/DynaDiff-VLBI/outputs/emc_benchmark_baseline_tracks_protocol/logs/per_sample_support_40.csv",
+  "prediction_path": "outputs/emc_benchmark_baseline_tracks_protocol/predictions/support_40.npz",
+  "per_sample_csv": "outputs/emc_benchmark_baseline_tracks_protocol/logs/per_sample_support_40.csv",
   "support_fraction_tag": "40",
   "condition_title": "Benchmark default32 baseline-track family"
 }
